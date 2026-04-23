@@ -1,0 +1,31 @@
+import { useNavigate, useParams } from "react-router";
+import { ArrowLeft, Camera } from "lucide-react";
+
+export function CategoryDetail() {
+  const navigate = useNavigate();
+  const { categoryName } = useParams();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-blue-600 text-white px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          <button
+            onClick={() => navigate("/home")}
+            className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3">
+            <Camera className="w-6 h-6" />
+            <h1 className="text-xl">{categoryName}</h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <p className="text-gray-600">Category details for {categoryName}</p>
+      </div>
+    </div>
+  );
+}

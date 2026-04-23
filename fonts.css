@@ -1,0 +1,283 @@
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import {
+  ArrowLeft,
+  Star,
+  MapPin,
+  Calendar,
+  Award,
+  Video,
+  Image as ImageIcon,
+  Users,
+  MessageCircle,
+  Heart,
+  Share2,
+} from "lucide-react";
+
+const mockCreator = {
+  id: 1,
+  name: "Sarah Johnson",
+  category: "Photographer",
+  rating: 4.8,
+  reviewCount: 124,
+  price: 5000,
+  location: "Mumbai, India",
+  image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
+  experience: 5,
+  verified: true,
+  bio: "Professional photographer with 5+ years of experience in wedding, portrait, and event photography. Passionate about capturing beautiful moments and creating lasting memories.",
+  services: ["Wedding Photography", "Portrait Sessions", "Event Coverage", "Product Photography"],
+  completedProjects: 247,
+  responseTime: "Within 2 hours",
+  portfolio: [
+    "https://images.unsplash.com/photo-1519741497674-611481863552?w=400",
+    "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400",
+    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400",
+    "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=400",
+    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400",
+    "https://images.unsplash.com/photo-1502635385003-ee1e6a1a742d?w=400",
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: "Rajesh Kumar",
+      rating: 5,
+      date: "2 weeks ago",
+      comment: "Amazing work! Sarah captured our wedding beautifully. Very professional and creative.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",
+    },
+    {
+      id: 2,
+      name: "Anita Desai",
+      rating: 5,
+      date: "1 month ago",
+      comment: "Excellent photographer! The photos exceeded our expectations. Highly recommended!",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
+    },
+    {
+      id: 3,
+      name: "Vikram Singh",
+      rating: 4,
+      date: "2 months ago",
+      comment: "Great experience working with Sarah. Professional and delivered on time.",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
+    },
+  ],
+};
+
+export function CreatorProfile() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [activeTab, setActiveTab] = useState<"portfolio" | "reviews">("portfolio");
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-blue-600 text-white px-6 py-4 sticky top-0 z-10 shadow-lg">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-xl">Creator Profile</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsFavorite(!isFavorite)}
+              className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition"
+            >
+              <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+            </button>
+            <button className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition">
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Creator Header */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <div className="flex gap-6 mb-6">
+            <img
+              src={mockCreator.image}
+              alt={mockCreator.name}
+              className="w-32 h-32 rounded-2xl object-cover"
+            />
+            <div className="flex-1">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-2xl text-gray-800">{mockCreator.name}</h1>
+                    {mockCreator.verified && (
+                      <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs">
+                        Verified
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-gray-600">{mockCreator.category}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl text-blue-600">₹{mockCreator.price.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">per session</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 mb-4">
+                <div className="flex items-center gap-1">
+                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-gray-700">{mockCreator.rating}</span>
+                  <span className="text-gray-400">({mockCreator.reviewCount} reviews)</span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-500">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm">{mockCreator.location}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <Award className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-gray-600">Experience</p>
+                  <p className="text-gray-800">{mockCreator.experience} years</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-gray-600">Projects</p>
+                  <p className="text-gray-800">{mockCreator.completedProjects}</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-gray-600">Response</p>
+                  <p className="text-gray-800 text-xs">{mockCreator.responseTime}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="mb-6">
+            <h3 className="text-lg text-gray-800 mb-2">About</h3>
+            <p className="text-gray-600 leading-relaxed">{mockCreator.bio}</p>
+          </div>
+
+          {/* Services */}
+          <div className="mb-6">
+            <h3 className="text-lg text-gray-800 mb-3">Services Offered</h3>
+            <div className="flex flex-wrap gap-2">
+              {mockCreator.services.map((service) => (
+                <div key={service} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm">
+                  {service}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(`/booking/${id}`)}
+              className="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2"
+            >
+              <Calendar className="w-5 h-5" />
+              Book Now
+            </button>
+            <button className="px-6 bg-white border-2 border-blue-600 text-blue-600 py-3 rounded-xl hover:bg-blue-50 transition flex items-center justify-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Message
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex border-b">
+            <button
+              onClick={() => setActiveTab("portfolio")}
+              className={`flex-1 px-6 py-4 flex items-center justify-center gap-2 transition ${
+                activeTab === "portfolio"
+                  ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <ImageIcon className="w-5 h-5" />
+              Portfolio
+            </button>
+            <button
+              onClick={() => setActiveTab("reviews")}
+              className={`flex-1 px-6 py-4 flex items-center justify-center gap-2 transition ${
+                activeTab === "reviews"
+                  ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <Star className="w-5 h-5" />
+              Reviews ({mockCreator.reviews.length})
+            </button>
+          </div>
+
+          <div className="p-6">
+            {activeTab === "portfolio" && (
+              <div className="grid grid-cols-2 gap-4">
+                {mockCreator.portfolio.map((image, index) => (
+                  <div key={index} className="aspect-square rounded-xl overflow-hidden">
+                    <img
+                      src={image}
+                      alt={`Portfolio ${index + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "reviews" && (
+              <div className="space-y-4">
+                {mockCreator.reviews.map((review) => (
+                  <div key={review.id} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex gap-4 mb-3">
+                      <img
+                        src={review.avatar}
+                        alt={review.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-gray-800">{review.name}</h4>
+                          <span className="text-sm text-gray-500">{review.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < review.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-gray-600">{review.comment}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
