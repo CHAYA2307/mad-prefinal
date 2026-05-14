@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter } from "react-router-dom";
+
 import Splash from "./screens/Splash";
 import Login from "./screens/Login";
 import Register from "./screens/Register";
@@ -11,34 +12,41 @@ import Dashboard from "./screens/Dashboard";
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: Splash,
+    element: <Splash />,
   },
+
   {
     path: "/login",
-    Component: Login,
+    element: <Login />,
   },
+
   {
     path: "/register",
-    Component: Register,
+    element: <Register />,
   },
+
   {
     path: "/categories",
-    Component: Categories,
+    element: <Categories />,
   },
+
   {
     path: "/creators/:category/:subcategory",
-    Component: CreatorList,
+    element: <CreatorList />,
   },
+
   {
     path: "/creator/:id",
-    Component: CreatorProfile,
+    element: <CreatorProfile />,
   },
+
   {
     path: "/booking/:creatorId",
-    Component: Booking,
+    element: <Booking />,
   },
+
   {
     path: "/dashboard",
-    Component: Dashboard,
+    element: <Dashboard />,
   },
 ]);
