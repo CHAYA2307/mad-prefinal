@@ -341,14 +341,22 @@ export default function CreatorList() {
 
               <CardContent className="p-4">
 
-                <div className="flex gap-4">
+                <div className="flex gap-4 items-start">
 
-                  {/* AVATAR */}
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white text-2xl shrink-0">
+                  {/* PROFILE IMAGE */}
+                  {creator.profileImage && (
 
-                    {creator.name?.charAt(0)}
+                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
 
-                  </div>
+                      <img
+                        src={creator.profileImage}
+                        alt={creator.name}
+                        className="w-full h-full object-cover"
+                      />
+
+                    </div>
+
+                  )}
 
 
                   {/* DETAILS */}
@@ -395,15 +403,20 @@ export default function CreatorList() {
                     </div>
 
 
-                    <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
+                    {/* LOCATION */}
+                    {creator.location && (
 
-                      <MapPin className="w-4 h-4" />
+                      <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
 
-                      <span>
-                        {creator.location || "Unknown"}
-                      </span>
+                        <MapPin className="w-4 h-4" />
 
-                    </div>
+                        <span>
+                          {creator.location}
+                        </span>
+
+                      </div>
+
+                    )}
 
 
                     <div className="flex items-center justify-between">
