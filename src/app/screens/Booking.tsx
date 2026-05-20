@@ -66,19 +66,15 @@ export default function Booking() {
   const [bookingLoading, setBookingLoading] =
     useState(false);
 
-
   // 🔥 BOOKING DATA
   const [date, setDate] =
-    useState<Date | undefined>(
-      new Date()
-    );
+    useState<Date | undefined>(undefined);
 
   const [time, setTime] =
     useState("10:00");
 
   const [message, setMessage] =
     useState("");
-
 
   // 🔥 FETCH DATA
   useEffect(() => {
@@ -169,7 +165,6 @@ export default function Booking() {
     return () => unsubscribe();
 
   }, [creatorId, navigate]);
-
 
   // 🔥 BOOKING FUNCTION
   const handleBooking =
@@ -268,7 +263,6 @@ export default function Booking() {
       setBookingLoading(false);
     };
 
-
   // 🔥 LOADING
   if (loading) {
 
@@ -284,7 +278,6 @@ export default function Booking() {
       </div>
     );
   }
-
 
   // 🔥 NOT FOUND
   if (!creator) {
@@ -302,7 +295,6 @@ export default function Booking() {
     );
   }
 
-
   // 🔥 TIME SLOTS
   const timeSlots = [
     "09:00",
@@ -315,7 +307,6 @@ export default function Booking() {
     "17:00",
     "18:00",
   ];
-
 
   return (
     <div className="min-h-screen bg-white">
@@ -334,7 +325,6 @@ export default function Booking() {
 
         </button>
 
-
         <h1 className="text-2xl mb-1">
 
           Book Service
@@ -350,7 +340,6 @@ export default function Booking() {
 
       </div>
 
-
       <div className="p-6 -mt-4">
 
         {/* CREATOR INFO */}
@@ -365,7 +354,6 @@ export default function Booking() {
                 {creator.name?.charAt(0)}
 
               </div>
-
 
               <div className="flex-1">
 
@@ -396,7 +384,6 @@ export default function Booking() {
 
         </Card>
 
-
         {/* DATE */}
         <Card className="border-gray-200 mb-6">
 
@@ -413,7 +400,6 @@ export default function Booking() {
               </h3>
 
             </div>
-
 
             <Calendar
               mode="single"
@@ -433,13 +419,13 @@ export default function Booking() {
 
                 return date < today;
               }}
+              initialFocus
               className="rounded-md border border-gray-200 mx-auto"
             />
 
           </CardContent>
 
         </Card>
-
 
         {/* TIME */}
         <Card className="border-gray-200 mb-6">
@@ -457,7 +443,6 @@ export default function Booking() {
               </h3>
 
             </div>
-
 
             <div className="grid grid-cols-3 gap-2">
 
@@ -488,7 +473,6 @@ export default function Booking() {
 
         </Card>
 
-
         {/* MESSAGE */}
         <Card className="border-gray-200 mb-6">
 
@@ -510,7 +494,6 @@ export default function Booking() {
 
             </div>
 
-
             <Textarea
               id="message"
               placeholder="Tell the creator about your requirements..."
@@ -527,7 +510,6 @@ export default function Booking() {
 
         </Card>
 
-
         {/* SUMMARY */}
         <Card className="border-gray-200 mb-6">
 
@@ -538,7 +520,6 @@ export default function Booking() {
               Booking Summary
 
             </h3>
-
 
             <div className="space-y-3 text-sm">
 
@@ -558,7 +539,6 @@ export default function Booking() {
 
               </div>
 
-
               <div className="flex justify-between">
 
                 <span className="text-gray-600">
@@ -577,7 +557,6 @@ export default function Booking() {
 
               </div>
 
-
               <div className="flex justify-between">
 
                 <span className="text-gray-600">
@@ -593,7 +572,6 @@ export default function Booking() {
                 </span>
 
               </div>
-
 
               <div className="border-t border-gray-200 pt-3 flex justify-between">
 
@@ -617,7 +595,6 @@ export default function Booking() {
           </CardContent>
 
         </Card>
-
 
         {/* BUTTON */}
         <Button

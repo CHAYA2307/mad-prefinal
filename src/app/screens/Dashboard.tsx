@@ -3,27 +3,23 @@ import {
   useState,
 } from "react";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import {
   Camera,
-  User,
   Upload,
-  Settings,
+  Calendar,
+  IndianRupee,
   LogOut,
-  Clock,
-  CheckCircle,
-  XCircle,
+  Trash2,
 } from "lucide-react";
 
 import {
   Card,
   CardContent,
 } from "../components/ui/card";
-
-import {
-  Badge,
-} from "../components/ui/badge";
 
 import { Button } from "../components/ui/button";
 
@@ -37,43 +33,46 @@ import {
 import {
   signOut,
   onAuthStateChanged,
+  deleteUser,
 } from "firebase/auth";
 
 import {
+  doc,
+  getDoc,
   collection,
   query,
   where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  getDoc,
+  getDocs,
+  deleteDoc,
 } from "firebase/firestore";
 
 
 export default function Dashboard() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [bookings, setBookings] =
-    useState<any[]>([]);
-
-  const [creatorProfile,
-    setCreatorProfile] =
+  const [creator,
+    setCreator] =
     useState<any>(null);
 
-  const [loading, setLoading] =
+  const [bookings,
+    setBookings] =
+    useState<any[]>([]);
+
+  const [loading,
+    setLoading] =
     useState(true);
 
 
-  // 🔥 AUTH CHECK
+  // 🔥 FETCH DATA
   useEffect(() => {
 
-    const unsubscribeAuth =
+    const unsubscribe =
       onAuthStateChanged(
         auth,
         async (user) => {
 
-          // 🚫 NOT LOGGED IN
           if (!user) {
 
             navigate("/login");
@@ -83,33 +82,7 @@ export default function Dashboard() {
 
           try {
 
-            // 🔥 GET USER ROLE
-            const userDoc =
-              await getDoc(
-                doc(
-                  db,
-                  "users",
-                  user.uid
-                )
-              );
-
-            const userData =
-              userDoc.data();
-
-            // 🚫 CUSTOMER REDIRECT
-            if (
-              userData?.role !==
-              "creator"
-            ) {
-
-              navigate(
-                "/customer-dashboard"
-              );
-
-              return;
-            }
-
-            // 🔥 GET CREATOR PROFILE
+            // 🔥 CREATOR DATA
             const creatorDoc =
               await getDoc(
                 doc(
@@ -123,171 +96,146 @@ export default function Dashboard() {
               creatorDoc.exists()
             ) {
 
-              setCreatorProfile({
+              setCreator({
                 id:
                   creatorDoc.id,
                 ...creatorDoc.data(),
               });
 
-            }
+            } else {
 
-            // 🔥 BOOKINGS QUERY
-            const q = query(
-              collection(
-                db,
-                "bookings"
-              ),
-              where(
-                "creatorId",
-                "==",
-                user.uid
-              )
-            );
-
-            const unsubscribeBookings =
-              onSnapshot(
-                q,
-                (snapshot) => {
-
-                  const bookingData =
-                    snapshot.docs.map(
-                      (doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                      })
-                    );
-
-                  setBookings(
-                    bookingData
-                  );
-
-                  setLoading(false);
-                }
+              alert(
+                "Only creators can access dashboard"
               );
 
-            return () =>
-              unsubscribeBookings();
+              navigate(
+                "/categories"
+              );
+
+              return;
+            }
+
+
+            // 🔥 BOOKINGS
+            const bookingsQuery =
+              query(
+                collection(
+                  db,
+                  "bookings"
+                ),
+                where(
+                  "creatorId",
+                  "==",
+                  user.uid
+                )
+              );
+
+            const bookingsSnapshot =
+              await getDocs(
+                bookingsQuery
+              );
+
+            const bookingsData =
+              bookingsSnapshot.docs.map(
+                (doc) => ({
+                  id: doc.id,
+                  ...doc.data(),
+                })
+              );
+
+            setBookings(
+              bookingsData
+            );
 
           } catch (error) {
 
             console.log(error);
 
-            navigate("/login");
-
           }
+
+          setLoading(false);
         }
       );
 
     return () =>
-      unsubscribeAuth();
+      unsubscribe();
 
   }, [navigate]);
 
 
-  // 🔥 UPDATE BOOKING STATUS
-  const updateBookingStatus =
-    async (
-      bookingId: string,
-      status: string
-    ) => {
+  // 🔥 LOGOUT
+  const handleLogout =
+    async () => {
 
-      try {
+      await signOut(auth);
 
-        await updateDoc(
-          doc(
-            db,
-            "bookings",
-            bookingId
-          ),
-          {
-            status,
-          }
-        );
-
-      } catch (error) {
-
-        console.log(error);
-
-      }
+      navigate("/login");
     };
 
 
-  // 🔥 STATUS COLOR
-  const getStatusColor = (
-    status: string
-  ) => {
+  // 🔥 DELETE ACCOUNT
+  const handleDeleteAccount =
+    async () => {
 
-    switch (status) {
-
-      case "pending":
-        return "bg-yellow-100 text-yellow-700";
-
-      case "accepted":
-        return "bg-green-100 text-green-700";
-
-      case "completed":
-        return "bg-blue-100 text-blue-700";
-
-      case "rejected":
-        return "bg-red-100 text-red-700";
-
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-
-  // 🔥 STATUS ICON
-  const getStatusIcon = (
-    status: string
-  ) => {
-
-    switch (status) {
-
-      case "pending":
-        return (
-          <Clock className="w-4 h-4" />
+      const confirmDelete =
+        window.confirm(
+          "Are you sure you want to delete your account?"
         );
 
-      case "accepted":
-        return (
-          <CheckCircle className="w-4 h-4" />
+      if (!confirmDelete)
+        return;
+
+      try {
+
+        const user =
+          auth.currentUser;
+
+        if (!user)
+          return;
+
+
+        // 🔥 DELETE USER DOC
+        await deleteDoc(
+          doc(
+            db,
+            "users",
+            user.uid
+          )
         );
 
-      case "completed":
-        return (
-          <CheckCircle className="w-4 h-4" />
+
+        // 🔥 DELETE CREATOR DOC
+        await deleteDoc(
+          doc(
+            db,
+            "creators",
+            user.uid
+          )
         );
 
-      case "rejected":
-        return (
-          <XCircle className="w-4 h-4" />
+
+        // 🔥 DELETE AUTH
+        await deleteUser(
+          user
         );
 
-      default:
-        return null;
-    }
-  };
+        alert(
+          "Account deleted successfully"
+        );
 
+        navigate("/login");
 
-  // 🔥 FILTER BOOKINGS
-  const pendingBookings =
-    bookings.filter(
-      (b) =>
-        b.status === "pending"
-    );
+      } catch (
+        error: any
+      ) {
 
-  const acceptedBookings =
-    bookings.filter(
-      (b) =>
-        b.status === "accepted"
-    );
+        console.log(error);
 
-  const completedBookings =
-    bookings.filter(
-      (b) =>
-        b.status === "completed"
-    );
+        alert(
+          error.message
+        );
+      }
+    };
 
 
   // 🔥 LOADING
@@ -308,36 +256,69 @@ export default function Dashboard() {
 
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
 
       {/* HEADER */}
-      <div className="bg-blue-600 text-white p-6 pb-8">
+      <div className="bg-blue-600 text-white p-6">
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
 
           <div className="flex items-center gap-3">
 
-            <Camera className="w-6 h-6" />
+            {/* PROFILE IMAGE */}
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-white">
 
-            <h1 className="text-xl">
+              {creator?.profileImage ? (
 
-              Creator Dashboard
+                <img
+                  src={
+                    creator.profileImage
+                  }
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
 
-            </h1>
+              ) : (
+
+                <div className="w-full h-full flex items-center justify-center text-blue-600 text-xl font-bold">
+
+                  {creator?.name?.charAt(
+                    0
+                  )}
+
+                </div>
+
+              )}
+
+            </div>
+
+
+            <div>
+
+              <h1 className="text-2xl">
+
+                {creator?.name}
+
+              </h1>
+
+              <p className="text-blue-100">
+
+                {
+                  creator?.subCategory
+                }
+
+              </p>
+
+            </div>
 
           </div>
 
 
-          {/* LOGOUT */}
           <button
-            onClick={async () => {
-
-              await signOut(auth);
-
-              navigate("/login");
-
-            }}
-            className="p-2 hover:bg-blue-500 rounded-full transition-colors"
+            onClick={
+              handleLogout
+            }
+            className="p-2 hover:bg-blue-500 rounded-lg transition-colors"
           >
 
             <LogOut className="w-5 h-5" />
@@ -346,56 +327,40 @@ export default function Dashboard() {
 
         </div>
 
-
-        {/* PROFILE */}
-        <div className="flex items-center gap-4">
-
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl">
-
-            {creatorProfile?.name?.charAt(0)}
-
-          </div>
-
-          <div>
-
-            <h2 className="text-2xl mb-1">
-
-              {creatorProfile?.name}
-
-            </h2>
-
-            <p className="text-blue-100">
-
-              {creatorProfile?.category}
-
-            </p>
-
-          </div>
-
-        </div>
-
       </div>
 
 
       {/* CONTENT */}
-      <div className="p-6 -mt-4 space-y-6">
+      <div className="p-6 space-y-6">
 
         {/* STATS */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-4">
 
           <Card>
 
-            <CardContent className="p-4 text-center">
+            <CardContent className="p-4">
 
-              <div className="text-2xl text-yellow-600 mb-1">
+              <div className="flex items-center gap-3">
 
-                {pendingBookings.length}
+                <Calendar className="w-8 h-8 text-blue-600" />
 
-              </div>
+                <div>
 
-              <div className="text-xs text-gray-600">
+                  <p className="text-gray-500 text-sm">
 
-                Pending
+                    Total Bookings
+
+                  </p>
+
+                  <h2 className="text-2xl">
+
+                    {
+                      bookings.length
+                    }
+
+                  </h2>
+
+                </div>
 
               </div>
 
@@ -406,38 +371,30 @@ export default function Dashboard() {
 
           <Card>
 
-            <CardContent className="p-4 text-center">
+            <CardContent className="p-4">
 
-              <div className="text-2xl text-green-600 mb-1">
+              <div className="flex items-center gap-3">
 
-                {acceptedBookings.length}
+                <IndianRupee className="w-8 h-8 text-green-600" />
 
-              </div>
+                <div>
 
-              <div className="text-xs text-gray-600">
+                  <p className="text-gray-500 text-sm">
 
-                Accepted
+                    Price
 
-              </div>
+                  </p>
 
-            </CardContent>
+                  <h2 className="text-2xl">
 
-          </Card>
+                    ₹
+                    {
+                      creator?.price
+                    }
 
+                  </h2>
 
-          <Card>
-
-            <CardContent className="p-4 text-center">
-
-              <div className="text-2xl text-blue-600 mb-1">
-
-                {completedBookings.length}
-
-              </div>
-
-              <div className="text-xs text-gray-600">
-
-                Completed
+                </div>
 
               </div>
 
@@ -448,39 +405,18 @@ export default function Dashboard() {
         </div>
 
 
-        {/* QUICK ACTIONS */}
-        <Card className="border-gray-200">
+        {/* ACTIONS */}
+        <Card>
 
-          <CardContent className="p-4">
+          <CardContent className="p-6">
 
-            <h3 className="text-sm text-gray-600 mb-3">
+            <h2 className="text-xl mb-4">
 
               Quick Actions
 
-            </h3>
+            </h2>
 
-            <div className="grid grid-cols-3 gap-2">
-
-              {/* EDIT PROFILE */}
-              <button
-                onClick={() =>
-                  navigate(
-                    "/creator-setup"
-                  )
-                }
-                className="flex flex-col items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-
-                <User className="w-5 h-5 text-blue-600" />
-
-                <span className="text-xs text-gray-700">
-
-                  Edit Profile
-
-                </span>
-
-              </button>
-
+            <div className="grid grid-cols-2 gap-4">
 
               {/* PORTFOLIO */}
               <button
@@ -489,30 +425,35 @@ export default function Dashboard() {
                     "/portfolio-upload"
                   )
                 }
-                className="flex flex-col items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex flex-col items-center gap-2 p-4 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
 
-                <Upload className="w-5 h-5 text-blue-600" />
+                <Upload className="w-6 h-6 text-blue-600" />
 
-                <span className="text-xs text-gray-700">
+                <span>
 
-                  Add Portfolio
+                  Portfolio
 
                 </span>
 
               </button>
 
 
-              {/* SETTINGS */}
+              {/* PROFILE */}
               <button
-                className="flex flex-col items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() =>
+                  navigate(
+                    `/creator/${creator.id}`
+                  )
+                }
+                className="flex flex-col items-center gap-2 p-4 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
 
-                <Settings className="w-5 h-5 text-blue-600" />
+                <Camera className="w-6 h-6 text-blue-600" />
 
-                <span className="text-xs text-gray-700">
+                <span>
 
-                  Settings
+                  View Profile
 
                 </span>
 
@@ -526,158 +467,102 @@ export default function Dashboard() {
 
 
         {/* BOOKINGS */}
-        <div className="space-y-4">
+        <Card>
 
-          <h2 className="text-xl text-gray-900">
+          <CardContent className="p-6">
 
-            Booking Requests
+            <h2 className="text-xl mb-4">
 
-          </h2>
+              Recent Bookings
 
-
-          {bookings.length === 0 ? (
-
-            <Card>
-
-              <CardContent className="p-8 text-center">
-
-                <p className="text-gray-500">
-
-                  No bookings yet
-
-                </p>
-
-              </CardContent>
-
-            </Card>
-
-          ) : (
-
-            bookings.map((booking) => (
-
-              <Card
-                key={booking.id}
-                className="border-gray-200"
-              >
-
-                <CardContent className="p-4">
-
-                  <div className="flex justify-between items-start mb-4">
-
-                    <div>
-
-                      <h3 className="text-lg text-gray-900">
-
-                        {booking.customerName}
-
-                      </h3>
-
-                      <p className="text-gray-600 text-sm">
-
-                        {booking.serviceType}
-
-                      </p>
-
-                    </div>
+            </h2>
 
 
-                    <Badge
-                      className={`flex items-center gap-1 ${getStatusColor(
-                        booking.status
-                      )}`}
+            {bookings.length === 0 ? (
+
+              <p className="text-gray-500">
+
+                No bookings yet
+
+              </p>
+
+            ) : (
+
+              <div className="space-y-4">
+
+                {bookings.map(
+                  (booking) => (
+
+                    <div
+                      key={
+                        booking.id
+                      }
+                      className="border rounded-xl p-4"
                     >
 
-                      {getStatusIcon(
-                        booking.status
-                      )}
+                      <div className="flex justify-between items-start">
 
-                      {booking.status}
+                        <div>
 
-                    </Badge>
+                          <h3 className="font-medium">
 
-                  </div>
+                            {
+                              booking.customerName
+                            }
 
+                          </h3>
 
-                  <div className="space-y-2 text-sm text-gray-700 mb-4">
+                          <p className="text-sm text-gray-500">
 
-                    <p>
+                            {
+                              booking.date
+                            }{" "}
+                            at{" "}
+                            {
+                              booking.time
+                            }
 
-                      📅 {booking.date}
+                          </p>
 
-                    </p>
+                        </div>
 
-                    <p>
+                        <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
 
-                      ⏰ {booking.time}
+                          {
+                            booking.status
+                          }
 
-                    </p>
+                        </span>
 
-                    <p>
-
-                      💰 ₹
-                      {booking.amount?.toLocaleString()}
-
-                    </p>
-
-                    {booking.message && (
-
-                      <p>
-
-                        📝 {booking.message}
-
-                      </p>
-
-                    )}
-
-                  </div>
-
-
-                  {/* ACTIONS */}
-                  {booking.status ===
-                    "pending" && (
-
-                    <div className="flex gap-3">
-
-                      <Button
-                        onClick={() =>
-                          updateBookingStatus(
-                            booking.id,
-                            "accepted"
-                          )
-                        }
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-
-                        Accept
-
-                      </Button>
-
-
-                      <Button
-                        onClick={() =>
-                          updateBookingStatus(
-                            booking.id,
-                            "rejected"
-                          )
-                        }
-                        variant="destructive"
-                        className="flex-1"
-                      >
-
-                        Reject
-
-                      </Button>
+                      </div>
 
                     </div>
-                  )}
 
-                </CardContent>
+                  )
+                )}
 
-              </Card>
-            ))
-          )}
+              </div>
 
-        </div>
+            )}
+
+          </CardContent>
+
+        </Card>
+
+
+      {/* DELETE ACCOUNT */}
+<button
+  onClick={
+    handleDeleteAccount
+  }
+  className="w-full bg-red-600 hover:bg-red-700 text-white p-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+>
+
+  <Trash2 className="w-4 h-4" />
+
+  Delete Account
+
+</button>
 
       </div>
 

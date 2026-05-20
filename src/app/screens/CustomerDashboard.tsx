@@ -3,25 +3,23 @@ import {
   useState,
 } from "react";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import {
-  Camera,
+  User,
   Calendar,
   Clock,
-  CheckCircle,
-  XCircle,
   LogOut,
+  Trash2,
+  Eye,
 } from "lucide-react";
 
 import {
   Card,
   CardContent,
 } from "../components/ui/card";
-
-import {
-  Badge,
-} from "../components/ui/badge";
 
 import { Button } from "../components/ui/button";
 
@@ -35,36 +33,42 @@ import {
 import {
   signOut,
   onAuthStateChanged,
+  deleteUser,
 } from "firebase/auth";
 
 import {
+  doc,
+  getDoc,
   collection,
   query,
   where,
-  onSnapshot,
-  doc,
-  getDoc,
+  getDocs,
+  deleteDoc,
 } from "firebase/firestore";
 
 
 export default function CustomerDashboard() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [bookings, setBookings] =
-    useState<any[]>([]);
-
-  const [userData, setUserData] =
+  const [customer,
+    setCustomer] =
     useState<any>(null);
 
-  const [loading, setLoading] =
+  const [bookings,
+    setBookings] =
+    useState<any[]>([]);
+
+  const [loading,
+    setLoading] =
     useState(true);
 
 
-  // 🔥 FETCH BOOKINGS
+  // 🔥 FETCH DATA
   useEffect(() => {
 
-    const unsubscribeAuth =
+    const unsubscribe =
       onAuthStateChanged(
         auth,
         async (user) => {
@@ -78,7 +82,7 @@ export default function CustomerDashboard() {
 
           try {
 
-            // 🔥 GET USER
+            // 🔥 CUSTOMER DATA
             const userDoc =
               await getDoc(
                 doc(
@@ -88,129 +92,160 @@ export default function CustomerDashboard() {
                 )
               );
 
-            const userInfo =
-              userDoc.data();
-
-            setUserData(userInfo);
-
-            // 🚫 BLOCK CREATORS
             if (
-              userInfo?.role ===
-              "creator"
+              userDoc.exists()
             ) {
 
-              navigate("/dashboard");
+              setCustomer({
+                id:
+                  userDoc.id,
+                ...userDoc.data(),
+              });
 
-              return;
             }
 
-            // 🔥 BOOKINGS QUERY
-            const q = query(
-              collection(
-                db,
-                "bookings"
-              ),
-              where(
-                "customerId",
-                "==",
-                user.uid
-              )
-            );
 
-            const unsubscribeBookings =
-              onSnapshot(
-                q,
-                (snapshot) => {
-
-                  const bookingData =
-                    snapshot.docs.map(
-                      (doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                      })
-                    );
-
-                  setBookings(
-                    bookingData
-                  );
-
-                  setLoading(false);
-                }
+            // 🔥 BOOKINGS
+            const bookingsQuery =
+              query(
+                collection(
+                  db,
+                  "bookings"
+                ),
+                where(
+                  "customerId",
+                  "==",
+                  user.uid
+                )
               );
 
-            return () =>
-              unsubscribeBookings();
+            const bookingsSnapshot =
+              await getDocs(
+                bookingsQuery
+              );
+
+            const bookingsData =
+              bookingsSnapshot.docs.map(
+                (doc) => ({
+                  id: doc.id,
+                  ...doc.data(),
+                })
+              );
+
+            setBookings(
+              bookingsData
+            );
 
           } catch (error) {
 
             console.log(error);
 
           }
+
+          setLoading(false);
         }
       );
 
     return () =>
-      unsubscribeAuth();
+      unsubscribe();
 
   }, [navigate]);
 
 
-  // 🔥 STATUS COLOR
-  const getStatusColor = (
-    status: string
-  ) => {
+  // 🔥 LOGOUT
+  const handleLogout =
+    async () => {
 
-    switch (status) {
+      await signOut(auth);
 
-      case "pending":
-        return "bg-yellow-100 text-yellow-700";
-
-      case "accepted":
-        return "bg-green-100 text-green-700";
-
-      case "completed":
-        return "bg-blue-100 text-blue-700";
-
-      case "rejected":
-        return "bg-red-100 text-red-700";
-
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+      navigate("/login");
+    };
 
 
-  // 🔥 STATUS ICON
-  const getStatusIcon = (
-    status: string
-  ) => {
+  // 🔥 DELETE ACCOUNT
+  const handleDeleteAccount =
+    async () => {
 
-    switch (status) {
-
-      case "pending":
-        return (
-          <Clock className="w-4 h-4" />
+      const confirmDelete =
+        window.confirm(
+          "Are you sure you want to delete your account?"
         );
 
-      case "accepted":
-        return (
-          <CheckCircle className="w-4 h-4" />
+      if (!confirmDelete)
+        return;
+
+      try {
+
+        const user =
+          auth.currentUser;
+
+        if (!user)
+          return;
+
+
+        // 🔥 DELETE USER DOC
+        await deleteDoc(
+          doc(
+            db,
+            "users",
+            user.uid
+          )
         );
 
-      case "completed":
-        return (
-          <CheckCircle className="w-4 h-4" />
+
+        // 🔥 DELETE BOOKINGS
+        const bookingsQuery =
+          query(
+            collection(
+              db,
+              "bookings"
+            ),
+            where(
+              "customerId",
+              "==",
+              user.uid
+            )
+          );
+
+        const bookingsSnapshot =
+          await getDocs(
+            bookingsQuery
+          );
+
+        for (const booking of bookingsSnapshot.docs) {
+
+          await deleteDoc(
+            doc(
+              db,
+              "bookings",
+              booking.id
+            )
+          );
+        }
+
+
+        // 🔥 DELETE AUTH
+        await deleteUser(
+          user
         );
 
-      case "rejected":
-        return (
-          <XCircle className="w-4 h-4" />
+        alert(
+          "Account deleted successfully"
         );
 
-      default:
-        return null;
-    }
-  };
+        navigate("/login");
+
+      } catch (
+        error: any
+      ) {
+
+        console.log(error);
+
+        alert(
+          error.message
+        );
+      }
+    };
 
 
   // 🔥 LOADING
@@ -221,7 +256,7 @@ export default function CustomerDashboard() {
 
         <p className="text-gray-600">
 
-          Loading bookings...
+          Loading Dashboard...
 
         </p>
 
@@ -231,36 +266,68 @@ export default function CustomerDashboard() {
 
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
 
       {/* HEADER */}
-      <div className="bg-blue-600 text-white p-6 pb-8">
+      <div className="bg-blue-600 text-white p-6">
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
 
           <div className="flex items-center gap-3">
 
-            <Camera className="w-6 h-6" />
+            {/* PROFILE IMAGE */}
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-white">
 
-            <h1 className="text-xl">
+              {customer?.profileImage ? (
 
-              Customer Dashboard
+                <img
+                  src={
+                    customer.profileImage
+                  }
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
 
-            </h1>
+              ) : (
+
+                <div className="w-full h-full flex items-center justify-center text-blue-600 text-xl font-bold">
+
+                  {customer?.name?.charAt(
+                    0
+                  )}
+
+                </div>
+
+              )}
+
+            </div>
+
+
+            <div>
+
+              <h1 className="text-2xl">
+
+                {customer?.name}
+
+              </h1>
+
+              <p className="text-blue-100">
+
+                Customer Dashboard
+
+              </p>
+
+            </div>
 
           </div>
 
 
           {/* LOGOUT */}
           <button
-            onClick={async () => {
-
-              await signOut(auth);
-
-              navigate("/login");
-
-            }}
-            className="p-2 hover:bg-blue-500 rounded-full transition-colors"
+            onClick={
+              handleLogout
+            }
+            className="p-2 hover:bg-blue-500 rounded-lg transition-colors"
           >
 
             <LogOut className="w-5 h-5" />
@@ -269,234 +336,189 @@ export default function CustomerDashboard() {
 
         </div>
 
-
-        {/* USER */}
-        <div>
-
-          <h2 className="text-2xl mb-1">
-
-            {userData?.name}
-
-          </h2>
-
-          <p className="text-blue-100">
-
-            Your bookings & services
-
-          </p>
-
-        </div>
-
       </div>
 
 
       {/* CONTENT */}
-      <div className="p-6 -mt-4 space-y-4">
+      <div className="p-6 space-y-6">
 
         {/* STATS */}
-        <div className="grid grid-cols-3 gap-3">
+        <Card>
 
-          <Card>
+          <CardContent className="p-6">
 
-            <CardContent className="p-4 text-center">
+            <div className="flex items-center gap-4">
 
-              <div className="text-2xl text-yellow-600 mb-1">
+              <Calendar className="w-10 h-10 text-blue-600" />
 
-                {
-                  bookings.filter(
-                    (b) =>
-                      b.status ===
-                      "pending"
-                  ).length
-                }
-
-              </div>
-
-              <div className="text-xs text-gray-600">
-
-                Pending
-
-              </div>
-
-            </CardContent>
-
-          </Card>
-
-
-          <Card>
-
-            <CardContent className="p-4 text-center">
-
-              <div className="text-2xl text-green-600 mb-1">
-
-                {
-                  bookings.filter(
-                    (b) =>
-                      b.status ===
-                      "accepted"
-                  ).length
-                }
-
-              </div>
-
-              <div className="text-xs text-gray-600">
-
-                Accepted
-
-              </div>
-
-            </CardContent>
-
-          </Card>
-
-
-          <Card>
-
-            <CardContent className="p-4 text-center">
-
-              <div className="text-2xl text-blue-600 mb-1">
-
-                {
-                  bookings.filter(
-                    (b) =>
-                      b.status ===
-                      "completed"
-                  ).length
-                }
-
-              </div>
-
-              <div className="text-xs text-gray-600">
-
-                Completed
-
-              </div>
-
-            </CardContent>
-
-          </Card>
-
-        </div>
-
-
-        {/* BOOKINGS */}
-        <div className="space-y-4">
-
-          {bookings.length === 0 ? (
-
-            <Card>
-
-              <CardContent className="p-8 text-center">
-
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <div>
 
                 <p className="text-gray-500">
 
-                  No bookings yet
+                  Total Bookings
 
                 </p>
 
-              </CardContent>
+                <h2 className="text-3xl">
 
-            </Card>
+                  {bookings.length}
 
-          ) : (
+                </h2>
 
-            bookings.map((booking) => (
+              </div>
 
-              <Card
-                key={booking.id}
-                className="border-gray-200"
-              >
+            </div>
 
-                <CardContent className="p-4">
+          </CardContent>
 
-                  <div className="flex justify-between items-start mb-3">
-
-                    <div>
-
-                      <h3 className="text-lg text-gray-900">
-
-                        {booking.creatorName}
-
-                      </h3>
-
-                      <p className="text-gray-600 text-sm">
-
-                        {booking.serviceType}
-
-                      </p>
-
-                    </div>
+        </Card>
 
 
-                    <Badge
-                      className={`flex items-center gap-1 ${getStatusColor(
-                        booking.status
-                      )}`}
+        {/* BOOKINGS */}
+        <Card>
+
+          <CardContent className="p-6">
+
+            <h2 className="text-xl mb-4">
+
+              My Bookings
+
+            </h2>
+
+
+            {bookings.length === 0 ? (
+
+              <p className="text-gray-500">
+
+                No bookings yet
+
+              </p>
+
+            ) : (
+
+              <div className="space-y-4">
+
+                {bookings.map(
+                  (booking) => (
+
+                    <div
+                      key={
+                        booking.id
+                      }
+                      className="border rounded-xl p-4"
                     >
 
-                      {getStatusIcon(
-                        booking.status
-                      )}
+                      <div className="flex justify-between items-start mb-3">
 
-                      {booking.status}
+                        <div>
 
-                    </Badge>
+                          <h3 className="font-medium text-lg">
 
-                  </div>
+                            {
+                              booking.creatorName
+                            }
+
+                          </h3>
+
+                          <p className="text-sm text-gray-500">
+
+                            {
+                              booking.serviceType
+                            }
+
+                          </p>
+
+                        </div>
 
 
-                  <div className="space-y-2 text-sm text-gray-700">
+                        <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
 
-                    <div className="flex items-center gap-2">
+                          {
+                            booking.status
+                          }
 
-                      <Calendar className="w-4 h-4 text-gray-400" />
+                        </span>
 
-                      <span>
-                        {booking.date}
-                      </span>
+                      </div>
+
+
+                      <div className="space-y-2 text-sm text-gray-600">
+
+                        <div className="flex items-center gap-2">
+
+                          <Calendar className="w-4 h-4" />
+
+                          <span>
+
+                            {
+                              booking.date
+                            }
+
+                          </span>
+
+                        </div>
+
+
+                        <div className="flex items-center gap-2">
+
+                          <Clock className="w-4 h-4" />
+
+                          <span>
+
+                            {
+                              booking.time
+                            }
+
+                          </span>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* VIEW CREATOR */}
+                      <Button
+                        onClick={() =>
+                          navigate(
+                            `/creator/${booking.creatorId}`
+                          )
+                        }
+                        className="w-full mt-4"
+                      >
+
+                        <Eye className="w-4 h-4 mr-2" />
+
+                        View Creator
+
+                      </Button>
 
                     </div>
 
+                  )
+                )}
 
-                    <div className="flex items-center gap-2">
+              </div>
 
-                      <Clock className="w-4 h-4 text-gray-400" />
+            )}
 
-                      <span>
-                        {booking.time}
-                      </span>
+          </CardContent>
 
-                    </div>
+        </Card>
 
 
-                    <div className="pt-2 border-t border-gray-100 flex justify-between">
+      {/* DELETE ACCOUNT */}
+<button
+  onClick={
+    handleDeleteAccount
+  }
+  className="w-full bg-red-600 hover:bg-red-700 text-white p-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+>
 
-                      <span className="text-gray-600">
+  <Trash2 className="w-4 h-4" />
 
-                        Amount
+  Delete Account
 
-                      </span>
-
-                      <span className="text-blue-600 text-lg">
-
-                        ₹
-                        {booking.amount?.toLocaleString()}
-
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                </CardContent>
-
-              </Card>
-            ))
-          )}
-
-        </div>
+</button>
 
       </div>
 

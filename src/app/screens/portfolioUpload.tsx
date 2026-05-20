@@ -3,35 +3,32 @@ import {
   useState,
 } from "react";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import {
-  ArrowLeft,
-  Upload,
-  Image as ImageIcon,
+  Image,
   Video,
+  ArrowLeft,
+  Plus,
 } from "lucide-react";
-
-import { Button } from "../components/ui/button";
 
 import {
   Card,
   CardContent,
 } from "../components/ui/card";
 
+import { Button } from "../components/ui/button";
+
+import { Input } from "../components/ui/input";
+
 
 // 🔥 FIREBASE
 import {
   auth,
   db,
-  storage,
 } from "../../firebase";
-
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
 
 import {
   doc,
@@ -47,19 +44,39 @@ import {
 
 export default function PortfolioUpload() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [creator, setCreator] =
+  const [creator,
+    setCreator] =
     useState<any>(null);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [uploading, setUploading] =
+  const [loading,
+    setLoading] =
     useState(false);
 
 
-  // 🔥 FETCH CREATOR
+  // 🔥 URL STATES
+  const [imageUrl,
+    setImageUrl] =
+    useState("");
+
+  const [videoUrl,
+    setVideoUrl] =
+    useState("");
+
+
+  // 🔥 EXISTING PORTFOLIO
+  const [images,
+    setImages] =
+    useState<string[]>([]);
+
+  const [videos,
+    setVideos] =
+    useState<string[]>([]);
+
+
+  // 🔥 LOAD CREATOR
   useEffect(() => {
 
     const unsubscribe =
@@ -76,28 +93,31 @@ export default function PortfolioUpload() {
 
           try {
 
-            const creatorRef =
-              doc(
-                db,
-                "creators",
-                user.uid
-              );
-
-            const creatorSnap =
+            const creatorDoc =
               await getDoc(
-                creatorRef
+                doc(
+                  db,
+                  "creators",
+                  user.uid
+                )
               );
 
             if (
-              creatorSnap.exists()
+              creatorDoc.exists()
             ) {
 
-              setCreator({
-                id:
-                  creatorSnap.id,
-                ...creatorSnap.data(),
-              });
+              const data =
+                creatorDoc.data();
 
+              setCreator(data);
+
+              setImages(
+                data.portfolioImages || []
+              );
+
+              setVideos(
+                data.portfolioVideos || []
+              );
             }
 
           } catch (error) {
@@ -105,189 +125,121 @@ export default function PortfolioUpload() {
             console.log(error);
 
           }
-
-          setLoading(false);
         }
       );
 
-    return () => unsubscribe();
+    return () =>
+      unsubscribe();
 
   }, [navigate]);
 
 
-  // 🔥 IMAGE UPLOAD
-  const handleImageUpload =
-    async (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
+  // 🔥 ADD IMAGE
+  const addImage =
+    async () => {
 
-      const file =
-        e.target.files?.[0];
-
-      if (!file || !creator)
+      if (!imageUrl)
         return;
 
-      setUploading(true);
+      setLoading(true);
 
       try {
 
-        // 🔥 STORAGE PATH
-        const storageRef =
-          ref(
-            storage,
-            `portfolio/images/${Date.now()}-${file.name}`
-          );
+        const user =
+          auth.currentUser;
 
-        // 🔥 UPLOAD FILE
-        await uploadBytes(
-          storageRef,
-          file
-        );
+        if (!user)
+          return;
 
-        // 🔥 GET URL
-        const downloadURL =
-          await getDownloadURL(
-            storageRef
-          );
-
-        // 🔥 SAVE IN FIRESTORE
         await updateDoc(
           doc(
             db,
             "creators",
-            creator.id
+            user.uid
           ),
           {
             portfolioImages:
               arrayUnion(
-                downloadURL
+                imageUrl
               ),
           }
         );
 
-        // 🔥 UPDATE LOCAL STATE
-        setCreator(
-          (prev: any) => ({
+        setImages(
+          (prev) => [
             ...prev,
-            portfolioImages: [
-              ...(prev.portfolioImages || []),
-              downloadURL,
-            ],
-          })
+            imageUrl,
+          ]
         );
 
+        setImageUrl("");
+
         alert(
-          "Image uploaded successfully!"
+          "Image added!"
         );
 
       } catch (error) {
 
         console.log(error);
 
-        alert(
-          "Image upload failed"
-        );
-
       }
 
-      setUploading(false);
+      setLoading(false);
     };
 
 
-  // 🔥 VIDEO UPLOAD
-  const handleVideoUpload =
-    async (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
+  // 🔥 ADD VIDEO
+  const addVideo =
+    async () => {
 
-      const file =
-        e.target.files?.[0];
-
-      if (!file || !creator)
+      if (!videoUrl)
         return;
 
-      setUploading(true);
+      setLoading(true);
 
       try {
 
-        // 🔥 STORAGE PATH
-        const storageRef =
-          ref(
-            storage,
-            `portfolio/videos/${Date.now()}-${file.name}`
-          );
+        const user =
+          auth.currentUser;
 
-        // 🔥 UPLOAD FILE
-        await uploadBytes(
-          storageRef,
-          file
-        );
+        if (!user)
+          return;
 
-        // 🔥 GET URL
-        const downloadURL =
-          await getDownloadURL(
-            storageRef
-          );
-
-        // 🔥 SAVE IN FIRESTORE
         await updateDoc(
           doc(
             db,
             "creators",
-            creator.id
+            user.uid
           ),
           {
             portfolioVideos:
               arrayUnion(
-                downloadURL
+                videoUrl
               ),
           }
         );
 
-        // 🔥 UPDATE LOCAL STATE
-        setCreator(
-          (prev: any) => ({
+        setVideos(
+          (prev) => [
             ...prev,
-            portfolioVideos: [
-              ...(prev.portfolioVideos || []),
-              downloadURL,
-            ],
-          })
+            videoUrl,
+          ]
         );
 
+        setVideoUrl("");
+
         alert(
-          "Video uploaded successfully!"
+          "Video added!"
         );
 
       } catch (error) {
 
         console.log(error);
 
-        alert(
-          "Video upload failed"
-        );
-
       }
 
-      setUploading(false);
+      setLoading(false);
     };
-
-
-  // 🔥 LOADING
-  if (loading) {
-
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-
-        <p className="text-gray-600">
-
-          Loading portfolio...
-
-        </p>
-
-      </div>
-    );
-  }
 
 
   return (
@@ -307,8 +259,7 @@ export default function PortfolioUpload() {
 
         </button>
 
-
-        <h1 className="text-2xl mb-1">
+        <h1 className="text-2xl">
 
           Portfolio Upload
 
@@ -316,7 +267,7 @@ export default function PortfolioUpload() {
 
         <p className="text-blue-100">
 
-          Upload your images and videos
+          Add your work links
 
         </p>
 
@@ -326,163 +277,120 @@ export default function PortfolioUpload() {
       {/* CONTENT */}
       <div className="p-6 space-y-6">
 
-        {/* IMAGE UPLOAD */}
-        <Card className="border-gray-200">
+        {/* IMAGE URL */}
+        <Card>
 
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-4">
 
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2">
 
-              <ImageIcon className="w-5 h-5 text-blue-600" />
+              <Image className="w-5 h-5 text-blue-600" />
 
-              <h2 className="text-lg text-gray-900">
+              <h2 className="text-lg">
 
-                Upload Images
+                Add Image URL
 
               </h2>
 
             </div>
 
 
-            <label className="block">
+            <Input
+              placeholder="Paste image URL"
+              value={imageUrl}
+              onChange={(e) =>
+                setImageUrl(
+                  e.target.value
+                )
+              }
+            />
 
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={
-                  handleImageUpload
-                }
-              />
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer">
+            <Button
+              onClick={addImage}
+              disabled={loading}
+              className="w-full"
+            >
 
-                <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <Plus className="w-4 h-4 mr-2" />
 
-                <p className="text-gray-700">
+              Add Image
 
-                  Click to upload image
-
-                </p>
-
-              </div>
-
-            </label>
+            </Button>
 
           </CardContent>
 
         </Card>
 
 
-        {/* VIDEO UPLOAD */}
-        <Card className="border-gray-200">
+        {/* VIDEO URL */}
+        <Card>
 
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-4">
 
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2">
 
               <Video className="w-5 h-5 text-blue-600" />
 
-              <h2 className="text-lg text-gray-900">
+              <h2 className="text-lg">
 
-                Upload Videos
+                Add Video URL
 
               </h2>
 
             </div>
 
 
-            <label className="block">
+            <Input
+              placeholder="Paste YouTube/video URL"
+              value={videoUrl}
+              onChange={(e) =>
+                setVideoUrl(
+                  e.target.value
+                )
+              }
+            />
 
-              <input
-                type="file"
-                accept="video/*"
-                className="hidden"
-                onChange={
-                  handleVideoUpload
-                }
-              />
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer">
+            <Button
+              onClick={addVideo}
+              disabled={loading}
+              className="w-full"
+            >
 
-                <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <Plus className="w-4 h-4 mr-2" />
 
-                <p className="text-gray-700">
+              Add Video
 
-                  Click to upload video
-
-                </p>
-
-              </div>
-
-            </label>
+            </Button>
 
           </CardContent>
 
         </Card>
 
 
-        {/* IMAGE PREVIEW */}
+        {/* IMAGES */}
         <div>
 
-          <h2 className="text-lg text-gray-900 mb-4">
+          <h2 className="text-xl mb-4">
 
             Uploaded Images
 
           </h2>
 
-
           <div className="grid grid-cols-2 gap-4">
 
-            {(creator?.portfolioImages || []).map(
+            {images.map(
               (
-                url: string,
-                index: number
+                image,
+                index
               ) => (
 
-                <div
+                <img
                   key={index}
-                  className="rounded-lg overflow-hidden bg-gray-100 aspect-square"
-                >
-
-                  <img
-                    src={url}
-                    alt={`Portfolio ${index}`}
-                    className="w-full h-full object-cover"
-                  />
-
-                </div>
-              )
-            )}
-
-          </div>
-
-        </div>
-
-
-        {/* VIDEO PREVIEW */}
-        <div>
-
-          <h2 className="text-lg text-gray-900 mb-4">
-
-            Uploaded Videos
-
-          </h2>
-
-
-          <div className="grid grid-cols-1 gap-4">
-
-            {(creator?.portfolioVideos || []).map(
-              (
-                url: string,
-                index: number
-              ) => (
-
-                <video
-                  key={index}
-                  src={url}
-                  controls
-                  className="rounded-lg w-full h-64 bg-black"
+                  src={image}
+                  alt=""
+                  className="w-full h-40 object-cover rounded-lg border"
                 />
 
               )
@@ -493,20 +401,40 @@ export default function PortfolioUpload() {
         </div>
 
 
-        {/* BUTTON */}
-        <Button
-          onClick={() =>
-            navigate("/dashboard")
-          }
-          disabled={uploading}
-          className="w-full bg-blue-600 hover:bg-blue-700"
-        >
+        {/* VIDEOS */}
+        <div>
 
-          {uploading
-            ? "Uploading..."
-            : "Back to Dashboard"}
+          <h2 className="text-xl mb-4">
 
-        </Button>
+            Uploaded Videos
+
+          </h2>
+
+          <div className="space-y-4">
+
+            {videos.map(
+              (
+                video,
+                index
+              ) => (
+
+                <a
+                  key={index}
+                  href={video}
+                  target="_blank"
+                  className="block p-4 border rounded-lg hover:bg-gray-50"
+                >
+
+                  {video}
+
+                </a>
+
+              )
+            )}
+
+          </div>
+
+        </div>
 
       </div>
 
