@@ -43,49 +43,57 @@ export default function CreatorProfile() {
 
   const { id } = useParams();
 
-  const [creator, setCreator] = useState<any>(null);
+  const [creator, setCreator] =
+    useState<any>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
 
   // 🔥 FETCH CREATOR
   useEffect(() => {
 
-    const fetchCreator = async () => {
+    const fetchCreator =
+      async () => {
 
-      try {
+        try {
 
-        const creatorRef = doc(
-          db,
-          "creators",
-          id as string
-        );
+          const creatorRef =
+            doc(
+              db,
+              "creators",
+              id as string
+            );
 
-        const creatorSnap = await getDoc(
-          creatorRef
-        );
+          const creatorSnap =
+            await getDoc(
+              creatorRef
+            );
 
-        if (creatorSnap.exists()) {
+          if (
+            creatorSnap.exists()
+          ) {
 
-          setCreator({
-            id: creatorSnap.id,
-            ...creatorSnap.data(),
-          });
+            setCreator({
+              id:
+                creatorSnap.id,
+              ...creatorSnap.data(),
+            });
 
-        } else {
+          } else {
 
-          setCreator(null);
+            setCreator(null);
+
+          }
+
+        } catch (error) {
+
+          console.log(error);
 
         }
 
-      } catch (error) {
-
-        console.log(error);
-
-      }
-
-      setLoading(false);
-    };
+        setLoading(false);
+      };
 
     fetchCreator();
 
@@ -99,7 +107,9 @@ export default function CreatorProfile() {
       <div className="min-h-screen bg-white flex items-center justify-center">
 
         <p className="text-gray-600">
+
           Loading creator...
+
         </p>
 
       </div>
@@ -114,7 +124,9 @@ export default function CreatorProfile() {
       <div className="min-h-screen bg-white flex items-center justify-center">
 
         <p className="text-gray-600">
+
           Creator not found
+
         </p>
 
       </div>
@@ -136,18 +148,39 @@ export default function CreatorProfile() {
       <div className="bg-blue-600 text-white p-6">
 
         <button
-          onClick={() => navigate(-1)}
+          onClick={() =>
+            navigate(-1)
+          }
           className="p-2 hover:bg-blue-500 rounded-full transition-colors mb-4"
         >
+
           <ArrowLeft className="w-5 h-5" />
+
         </button>
 
 
         <div className="flex items-start gap-4">
 
-          <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-white text-3xl shrink-0">
+          {/* PROFILE IMAGE */}
+          <div className="w-24 h-24 rounded-lg overflow-hidden bg-white/20 shrink-0">
 
-            {creator.name?.charAt(0)}
+            {creator.image ? (
+
+              <img
+                src={creator.image}
+                alt={creator.name}
+                className="w-full h-full object-cover"
+              />
+
+            ) : (
+
+              <div className="w-full h-full flex items-center justify-center text-3xl text-white">
+
+                {creator.name?.charAt(0)}
+
+              </div>
+
+            )}
 
           </div>
 
@@ -155,16 +188,21 @@ export default function CreatorProfile() {
           <div className="flex-1">
 
             <h1 className="text-2xl mb-2">
+
               {creator.name}
+
             </h1>
 
             <p className="text-blue-100 mb-3">
+
               {creator.subCategory}
+
             </p>
 
 
             <div className="flex items-center gap-4 text-sm">
 
+              {/* RATING */}
               <div className="flex items-center gap-1">
 
                 <Star className="w-4 h-4 fill-white text-white" />
@@ -175,19 +213,26 @@ export default function CreatorProfile() {
 
                 <span className="text-blue-200">
 
-                  ({creator.totalReviews || 0})
+                  (
+                  {creator.totalReviews || 0}
+                  )
 
                 </span>
 
               </div>
 
 
+              {/* EXPERIENCE */}
               <div className="flex items-center gap-1">
 
                 <Briefcase className="w-4 h-4" />
 
                 <span>
-                  {creator.experience || 0} years
+
+                  {creator.experience || 0}
+                  {" "}
+                  years
+
                 </span>
 
               </div>
@@ -211,26 +256,34 @@ export default function CreatorProfile() {
 
             <div className="flex items-center justify-between">
 
+              {/* LOCATION */}
               <div className="flex items-center gap-2 text-gray-700">
 
                 <MapPin className="w-5 h-5 text-gray-400" />
 
                 <span>
-                  {creator.location || "Unknown"}
+
+                  {creator.location ||
+                    "Unknown"}
+
                 </span>
 
               </div>
 
 
+              {/* PRICE */}
               <div className="text-right">
 
                 <div className="text-sm text-gray-600">
+
                   Starting from
+
                 </div>
 
                 <div className="text-2xl text-blue-600">
 
-                  ₹{creator.price?.toLocaleString() || 0}
+                  ₹
+                  {creator.price?.toLocaleString() || 0}
 
                 </div>
 
@@ -247,7 +300,9 @@ export default function CreatorProfile() {
         <div>
 
           <h2 className="text-lg text-gray-900 mb-3">
+
             About
+
           </h2>
 
           <Card className="border-gray-200">
@@ -256,7 +311,7 @@ export default function CreatorProfile() {
 
               <p className="text-gray-700 leading-relaxed">
 
-                {creator.description ||
+                {creator.about ||
                   "No description available"}
 
               </p>
@@ -272,7 +327,9 @@ export default function CreatorProfile() {
         <div>
 
           <h2 className="text-lg text-gray-900 mb-3">
+
             Portfolio
+
           </h2>
 
 
@@ -287,7 +344,11 @@ export default function CreatorProfile() {
                 value="all"
                 className="flex-1"
               >
-                All ({allMedia.length})
+
+                All (
+                {allMedia.length}
+                )
+
               </TabsTrigger>
 
 
@@ -295,9 +356,11 @@ export default function CreatorProfile() {
                 value="images"
                 className="flex-1"
               >
+
                 Images (
                 {creator.portfolioImages?.length || 0}
                 )
+
               </TabsTrigger>
 
 
@@ -305,9 +368,11 @@ export default function CreatorProfile() {
                 value="videos"
                 className="flex-1"
               >
+
                 Videos (
                 {creator.portfolioVideos?.length || 0}
                 )
+
               </TabsTrigger>
 
             </TabsList>
@@ -322,7 +387,10 @@ export default function CreatorProfile() {
               <div className="grid grid-cols-2 gap-3">
 
                 {allMedia.map(
-                  (url: string, idx: number) => (
+                  (
+                    url: string,
+                    idx: number
+                  ) => (
 
                     <div
                       key={idx}
@@ -345,7 +413,9 @@ export default function CreatorProfile() {
               {allMedia.length === 0 && (
 
                 <p className="text-center text-gray-500 py-8">
+
                   No portfolio items yet
+
                 </p>
 
               )}
@@ -362,7 +432,10 @@ export default function CreatorProfile() {
               <div className="grid grid-cols-2 gap-3">
 
                 {(creator.portfolioImages || []).map(
-                  (url: string, idx: number) => (
+                  (
+                    url: string,
+                    idx: number
+                  ) => (
 
                     <div
                       key={idx}
@@ -393,7 +466,10 @@ export default function CreatorProfile() {
               <div className="grid grid-cols-2 gap-3">
 
                 {(creator.portfolioVideos || []).map(
-                  (url: string, idx: number) => (
+                  (
+                    url: string,
+                    idx: number
+                  ) => (
 
                     <div
                       key={idx}
@@ -426,11 +502,14 @@ export default function CreatorProfile() {
 
         <div className="flex gap-3 max-w-2xl mx-auto">
 
+          {/* CHAT */}
           <Button
             variant="outline"
             className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
             onClick={() =>
-              alert("Chat feature coming soon!")
+              alert(
+                "Chat feature coming soon!"
+              )
             }
           >
 
@@ -441,13 +520,18 @@ export default function CreatorProfile() {
           </Button>
 
 
+          {/* BOOK */}
           <Button
             className="flex-1 bg-blue-600 hover:bg-blue-700"
             onClick={() =>
-              navigate(`/booking/${creator.id}`)
+              navigate(
+                `/booking/${creator.id}`
+              )
             }
           >
+
             Book Now
+
           </Button>
 
         </div>

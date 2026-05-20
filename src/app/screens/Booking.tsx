@@ -88,6 +88,7 @@ export default function Booking() {
         auth,
         async (user) => {
 
+          // 🚫 NOT LOGGED IN
           if (!user) {
 
             navigate("/login");
@@ -99,6 +100,35 @@ export default function Booking() {
 
           try {
 
+            // 🔥 GET USER ROLE
+            const userDoc =
+              await getDoc(
+                doc(
+                  db,
+                  "users",
+                  user.uid
+                )
+              );
+
+            const userData =
+              userDoc.data();
+
+            // 🚫 BLOCK CREATORS
+            if (
+              userData?.role ===
+              "creator"
+            ) {
+
+              alert(
+                "Creators cannot book services"
+              );
+
+              navigate("/dashboard");
+
+              return;
+            }
+
+            // 🔥 FETCH CREATOR
             const creatorRef = doc(
               db,
               "creators",
@@ -106,14 +136,17 @@ export default function Booking() {
             );
 
             const creatorSnap =
-              await getDoc(creatorRef);
+              await getDoc(
+                creatorRef
+              );
 
             if (
               creatorSnap.exists()
             ) {
 
               setCreator({
-                id: creatorSnap.id,
+                id:
+                  creatorSnap.id,
                 ...creatorSnap.data(),
               });
 
@@ -139,73 +172,101 @@ export default function Booking() {
 
 
   // 🔥 BOOKING FUNCTION
-  const handleBooking = async () => {
+  const handleBooking =
+    async () => {
 
-    if (!date) {
+      if (!date) {
 
-      alert("Please select date");
+        alert(
+          "Please select date"
+        );
 
-      return;
-    }
+        return;
+      }
 
-    if (!creator) return;
+      if (!creator) return;
 
-    setBookingLoading(true);
+      setBookingLoading(true);
 
-    try {
+      try {
 
-      await addDoc(
-        collection(db, "bookings"),
-        {
-          customerId: currentUser.uid,
+        // 🔥 FETCH CUSTOMER NAME
+        const userDoc =
+          await getDoc(
+            doc(
+              db,
+              "users",
+              currentUser.uid
+            )
+          );
 
-          customerName:
-            currentUser.displayName ||
-            "Customer",
+        const userData =
+          userDoc.data();
 
-          customerEmail:
-            currentUser.email,
+        // 🔥 SAVE BOOKING
+        await addDoc(
+          collection(
+            db,
+            "bookings"
+          ),
+          {
+            customerId:
+              currentUser.uid,
 
-          creatorId: creator.id,
+            customerName:
+              userData?.name ||
+              "Customer",
 
-          creatorName:
-            creator.name,
+            customerEmail:
+              currentUser.email,
 
-          serviceType:
-            creator.subCategory,
+            creatorId:
+              creator.id,
 
-          date:
-            date.toLocaleDateString(),
+            creatorName:
+              creator.name,
 
-          time,
+            serviceType:
+              creator.subCategory,
 
-          message,
+            date:
+              date.toLocaleDateString(),
 
-          amount: creator.price,
+            time,
 
-          status: "pending",
+            message,
 
-          createdAt:
-            serverTimestamp(),
-        }
-      );
+            amount:
+              creator.price,
 
-      alert(
-        "Booking request sent successfully!"
-      );
+            status:
+              "pending",
 
-      navigate("/categories");
+            createdAt:
+              serverTimestamp(),
+          }
+        );
 
-    } catch (error) {
+        alert(
+          "Booking request sent successfully!"
+        );
 
-      console.log(error);
+        navigate(
+          "/categories"
+        );
 
-      alert("Booking failed");
+      } catch (error) {
 
-    }
+        console.log(error);
 
-    setBookingLoading(false);
-  };
+        alert(
+          "Booking failed"
+        );
+
+      }
+
+      setBookingLoading(false);
+    };
 
 
   // 🔥 LOADING
@@ -215,7 +276,9 @@ export default function Booking() {
       <div className="min-h-screen bg-white flex items-center justify-center">
 
         <p className="text-gray-600">
+
           Loading booking...
+
         </p>
 
       </div>
@@ -230,7 +293,9 @@ export default function Booking() {
       <div className="min-h-screen bg-white flex items-center justify-center">
 
         <p className="text-gray-600">
+
           Creator not found
+
         </p>
 
       </div>
@@ -278,7 +343,8 @@ export default function Booking() {
 
         <p className="text-blue-100">
 
-          Schedule with {creator.name}
+          Schedule with{" "}
+          {creator.name}
 
         </p>
 
@@ -353,9 +419,20 @@ export default function Booking() {
               mode="single"
               selected={date}
               onSelect={setDate}
-              disabled={(date) =>
-                date < new Date()
-              }
+              disabled={(date) => {
+
+                const today =
+                  new Date();
+
+                today.setHours(
+                  0,
+                  0,
+                  0,
+                  0
+                );
+
+                return date < today;
+              }}
               className="rounded-md border border-gray-200 mx-auto"
             />
 
@@ -384,25 +461,26 @@ export default function Booking() {
 
             <div className="grid grid-cols-3 gap-2">
 
-              {timeSlots.map((slot) => (
+              {timeSlots.map(
+                (slot) => (
 
-                <button
-                  key={slot}
-                  onClick={() =>
-                    setTime(slot)
-                  }
-                  className={`p-3 rounded-lg border transition-colors ${
-                    time === slot
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
-                  }`}
-                >
+                  <button
+                    key={slot}
+                    onClick={() =>
+                      setTime(slot)
+                    }
+                    className={`p-3 rounded-lg border transition-colors ${
+                      time === slot
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
+                    }`}
+                  >
 
-                  {slot}
+                    {slot}
 
-                </button>
-
-              ))}
+                  </button>
+                )
+              )}
 
             </div>
 
@@ -425,7 +503,8 @@ export default function Booking() {
                 className="text-lg text-gray-900"
               >
 
-                Additional Message (Optional)
+                Additional Message
+                (Optional)
 
               </Label>
 
@@ -437,7 +516,9 @@ export default function Booking() {
               placeholder="Tell the creator about your requirements..."
               value={message}
               onChange={(e) =>
-                setMessage(e.target.value)
+                setMessage(
+                  e.target.value
+                )
               }
               className="min-h-32"
             />
@@ -464,7 +545,9 @@ export default function Booking() {
               <div className="flex justify-between">
 
                 <span className="text-gray-600">
+
                   Service
+
                 </span>
 
                 <span className="text-gray-900">
@@ -479,7 +562,9 @@ export default function Booking() {
               <div className="flex justify-between">
 
                 <span className="text-gray-600">
+
                   Date
+
                 </span>
 
                 <span className="text-gray-900">
@@ -496,7 +581,9 @@ export default function Booking() {
               <div className="flex justify-between">
 
                 <span className="text-gray-600">
+
                   Time
+
                 </span>
 
                 <span className="text-gray-900">

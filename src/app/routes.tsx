@@ -1,52 +1,92 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import Splash from "./screens/Splash";
+
 import Login from "./screens/Login";
+
 import Register from "./screens/Register";
+
 import Categories from "./screens/Categories";
+
 import CreatorList from "./screens/CreatorList";
+
 import CreatorProfile from "./screens/CreatorProfile";
+
 import Booking from "./screens/Booking";
+
 import Dashboard from "./screens/Dashboard";
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Splash />,
-  },
+import CreatorSetup from "./screens/CreatorSetup";
 
-  {
-    path: "/login",
-    element: <Login />,
-  },
+import PortfolioUpload from "./screens/PortfolioUpload";
 
-  {
-    path: "/register",
-    element: <Register />,
-  },
+import CustomerDashboard from "./screens/CustomerDashboard";
 
-  {
-    path: "/categories",
-    element: <Categories />,
-  },
 
-  {
-    path: "/creators/:category/:subcategory",
-    element: <CreatorList />,
-  },
+export const router =
+  createBrowserRouter([
 
-  {
-    path: "/creator/:id",
-    element: <CreatorProfile />,
-  },
+    {
+      path: "/",
+      element: <Splash />,
+    },
 
-  {
-    path: "/booking/:creatorId",
-    element: <Booking />,
-  },
+    {
+      path: "/login",
+      element: <Login />,
+    },
 
-  {
-    path: "/dashboard",
-    element: <Dashboard />,
-  },
-]);
+    {
+      path: "/register",
+      element: <Register />,
+    },
+
+    {
+      path: "/categories",
+      element: <Categories />,
+    },
+
+    {
+      path:
+        "/creators/:category/:subcategory",
+      element: <CreatorList />,
+    },
+
+    {
+      path: "/creator/:id",
+      element: <CreatorProfile />,
+    },
+
+    {
+      path:
+        "/booking/:creatorId",
+      element: <Booking />,
+    },
+
+    {
+      path: "/dashboard",
+      element: <Dashboard />,
+    },
+
+    {
+      path:
+        "/customer-dashboard",
+      element:
+        <CustomerDashboard />,
+    },
+
+    {
+      path:
+        "/creator-setup",
+      element:
+        <CreatorSetup />,
+    },
+
+    {
+      path:
+        "/portfolio-upload",
+      element:
+        <PortfolioUpload />,
+    },
+
+  ]);

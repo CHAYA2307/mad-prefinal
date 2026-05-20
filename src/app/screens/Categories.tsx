@@ -7,128 +7,226 @@ import { useNavigate } from "react-router-dom";
 
 import {
   Camera,
-  Sparkles,
-  Palette,
-  ChevronRight,
+  Search,
+  Grid3X3,
+  List,
+  Star,
+  MapPin,
   User,
 } from "lucide-react";
+
+import { Input } from "../components/ui/input";
+
+import { Button } from "../components/ui/button";
 
 import {
   Card,
   CardContent,
 } from "../components/ui/card";
 
+import {
+  Badge,
+} from "../components/ui/badge";
+
 
 // 🔥 FIREBASE
-import { db } from "../../firebase";
+import {
+  auth,
+  db,
+} from "../../firebase";
 
 import {
   collection,
   getDocs,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 
-
-// 🔥 ICON MAP
-const iconMap: Record<string, any> = {
-  Camera,
-  Sparkles,
-  Palette,
-};
+import {
+  onAuthStateChanged,
+} from "firebase/auth";
 
 
 export default function Categories() {
 
   const navigate = useNavigate();
 
-  const [categories, setCategories] =
+  const [creators, setCreators] =
+    useState<any[]>([]);
+
+  const [filteredCreators,
+    setFilteredCreators] =
     useState<any[]>([]);
 
   const [loading, setLoading] =
     useState(true);
 
+  const [searchTerm,
+    setSearchTerm] =
+    useState("");
 
-  // 🔥 FETCH CATEGORIES
+  const [selectedCategory,
+    setSelectedCategory] =
+    useState("All");
+
+  const [viewMode,
+    setViewMode] =
+    useState("grid");
+
+  // 🔥 USER ROLE
+  const [role, setRole] =
+    useState("");
+
+
+  // 🔥 CATEGORY LIST
+  const categories = [
+    "All",
+    "Media",
+    "Design",
+    "Music",
+    "Writing",
+    "Development",
+  ];
+
+
+  // 🔥 FETCH USER ROLE
   useEffect(() => {
 
-    const fetchCategories = async () => {
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        async (user) => {
 
-      try {
+          if (!user) return;
 
-        // 🔥 FETCH ALL CREATORS
-        const snapshot = await getDocs(
-          collection(db, "creators")
-        );
+          try {
 
-        const creators = snapshot.docs.map(
-          (doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })
-        );
+            const userDoc =
+              await getDoc(
+                doc(
+                  db,
+                  "users",
+                  user.uid
+                )
+              );
 
+            const userData =
+              userDoc.data();
 
-        // 🔥 BUILD DYNAMIC CATEGORIES
-        const grouped: any = {};
-
-        creators.forEach((creator: any) => {
-
-          if (!grouped[creator.category]) {
-
-            grouped[creator.category] = {
-              id: creator.category,
-              name: creator.category,
-              icon: "Camera",
-              subcategories: [],
-            };
-          }
-
-          if (
-            !grouped[
-              creator.category
-            ].subcategories.includes(
-              creator.subCategory
-            )
-          ) {
-
-            grouped[
-              creator.category
-            ].subcategories.push(
-              creator.subCategory
+            setRole(
+              userData?.role
             );
+
+          } catch (error) {
+
+            console.log(error);
+
           }
-        });
+        }
+      );
 
-
-        setCategories(
-          Object.values(grouped)
-        );
-
-      } catch (error) {
-
-        console.log(error);
-
-      }
-
-      setLoading(false);
-    };
-
-    fetchCategories();
+    return () => unsubscribe();
 
   }, []);
 
 
-  // 🔥 NAVIGATION
-  const handleCategoryClick = (
-    categoryId: string,
-    subcategory: string
-  ) => {
+  // 🔥 FETCH CREATORS
+  useEffect(() => {
 
-    navigate(
-      `/creators/${categoryId}/${encodeURIComponent(
-        subcategory
-      )}`
+    const fetchCreators =
+      async () => {
+
+        try {
+
+          const creatorsRef =
+            collection(
+              db,
+              "creators"
+            );
+
+          const snapshot =
+            await getDocs(
+              creatorsRef
+            );
+
+          const creatorData =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
+
+          setCreators(
+            creatorData
+          );
+
+          setFilteredCreators(
+            creatorData
+          );
+
+        } catch (error) {
+
+          console.log(error);
+
+        }
+
+        setLoading(false);
+      };
+
+    fetchCreators();
+
+  }, []);
+
+
+  // 🔥 FILTER CREATORS
+  useEffect(() => {
+
+    let filtered =
+      creators;
+
+    // CATEGORY FILTER
+    if (
+      selectedCategory !==
+      "All"
+    ) {
+
+      filtered =
+        filtered.filter(
+          (creator: any) =>
+            creator.category ===
+            selectedCategory
+        );
+    }
+
+    // SEARCH FILTER
+    if (searchTerm) {
+
+      filtered =
+        filtered.filter(
+          (creator: any) =>
+            creator.name
+              ?.toLowerCase()
+              .includes(
+                searchTerm.toLowerCase()
+              ) ||
+            creator.subCategory
+              ?.toLowerCase()
+              .includes(
+                searchTerm.toLowerCase()
+              )
+        );
+    }
+
+    setFilteredCreators(
+      filtered
     );
-  };
+
+  }, [
+    creators,
+    searchTerm,
+    selectedCategory,
+  ]);
 
 
   // 🔥 LOADING
@@ -138,7 +236,9 @@ export default function Categories() {
       <div className="min-h-screen bg-white flex items-center justify-center">
 
         <p className="text-gray-600">
-          Loading categories...
+
+          Loading creators...
+
         </p>
 
       </div>
@@ -158,18 +258,36 @@ export default function Categories() {
 
             <Camera className="w-6 h-6" />
 
-            <h1 className="text-xl">
+            <h1 className="text-2xl">
+
               Clip Crew
+
             </h1>
 
           </div>
 
 
-          {/* DASHBOARD */}
+          {/* DASHBOARD ICON */}
           <button
-            onClick={() =>
-              navigate("/dashboard")
-            }
+            onClick={() => {
+
+              if (
+                role === "creator"
+              ) {
+
+                navigate(
+                  "/dashboard"
+                );
+
+              } else {
+
+                navigate(
+                  "/customer-dashboard"
+                );
+
+              }
+
+            }}
             className="p-2 hover:bg-blue-500 rounded-full transition-colors"
           >
 
@@ -180,35 +298,126 @@ export default function Categories() {
         </div>
 
 
-        <h2 className="text-2xl mb-1">
+        {/* SEARCH */}
+        <div className="relative">
 
-          Discover Creators
+          <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
 
-        </h2>
+          <Input
+            placeholder="Search creators..."
+            value={searchTerm}
+            onChange={(e) =>
+              setSearchTerm(
+                e.target.value
+              )
+            }
+            className="pl-10 bg-white text-black"
+          />
 
-        <p className="text-blue-100">
-
-          Choose a service category
-
-        </p>
+        </div>
 
       </div>
 
 
-      {/* CATEGORIES */}
+      {/* CONTENT */}
       <div className="p-6 -mt-4">
 
-        <div className="space-y-6">
+        {/* FILTERS */}
+        <div className="flex items-center justify-between mb-6">
 
-          {categories.length === 0 ? (
+          {/* CATEGORY BUTTONS */}
+          <div className="flex gap-2 overflow-x-auto">
 
-            <Card className="border-gray-200">
+            {categories.map(
+              (category) => (
+
+                <button
+                  key={category}
+                  onClick={() =>
+                    setSelectedCategory(
+                      category
+                    )
+                  }
+                  className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
+                    selectedCategory ===
+                    category
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+
+                  {category}
+
+                </button>
+              )
+            )}
+
+          </div>
+
+
+          {/* VIEW TOGGLE */}
+          <div className="flex gap-2">
+
+            <button
+              onClick={() =>
+                setViewMode(
+                  "grid"
+                )
+              }
+              className={`p-2 rounded-lg ${
+                viewMode ===
+                "grid"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+
+              <Grid3X3 className="w-4 h-4" />
+
+            </button>
+
+
+            <button
+              onClick={() =>
+                setViewMode(
+                  "list"
+                )
+              }
+              className={`p-2 rounded-lg ${
+                viewMode ===
+                "list"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+
+              <List className="w-4 h-4" />
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+        {/* CREATOR LIST */}
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+              : "space-y-4"
+          }
+        >
+
+          {filteredCreators.length === 0 ? (
+
+            <Card>
 
               <CardContent className="p-8 text-center">
 
-                <p className="text-gray-600">
+                <p className="text-gray-500">
 
-                  No categories found
+                  No creators found
 
                 </p>
 
@@ -218,77 +427,154 @@ export default function Categories() {
 
           ) : (
 
-            categories.map((category: any) => {
-
-              const Icon =
-                iconMap[category.icon] ||
-                Camera;
-
-              return (
+            filteredCreators.map(
+              (creator: any) => (
 
                 <Card
-                  key={category.id}
-                  className="border-gray-200 shadow-sm"
+                  key={creator.id}
+                  className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() =>
+                    navigate(
+                      `/creator/${creator.id}`
+                    )
+                  }
                 >
 
                   <CardContent className="p-4">
 
-                    {/* CATEGORY HEADER */}
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex gap-4">
 
-                      <div className="bg-blue-100 p-3 rounded-lg">
+                      {/* IMAGE */}
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 shrink-0">
 
-                        <Icon className="w-6 h-6 text-blue-600" />
+                        {creator.image ? (
+
+                          <img
+                            src={
+                              creator.image
+                            }
+                            alt={
+                              creator.name
+                            }
+                            className="w-full h-full object-cover"
+                          />
+
+                        ) : (
+
+                          <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-2xl">
+
+                            {creator.name?.charAt(
+                              0
+                            )}
+
+                          </div>
+
+                        )}
 
                       </div>
 
 
-                      <h3 className="text-lg text-gray-900">
+                      {/* DETAILS */}
+                      <div className="flex-1">
 
-                        {category.name}
+                        <div className="flex justify-between items-start mb-2">
 
-                      </h3>
+                          <div>
 
-                    </div>
+                            <h3 className="text-lg text-gray-900">
+
+                              {creator.name}
+
+                            </h3>
+
+                            <p className="text-gray-600 text-sm">
+
+                              {
+                                creator.subCategory
+                              }
+
+                            </p>
+
+                          </div>
 
 
-                    {/* SUBCATEGORIES */}
-                    <div className="space-y-2">
+                          <Badge className="bg-blue-100 text-blue-700">
 
-                      {category.subcategories.map(
-                        (subcategory: string) => (
+                            {creator.category}
 
-                          <button
-                            key={subcategory}
-                            onClick={() =>
-                              handleCategoryClick(
-                                category.id,
-                                subcategory
-                              )
-                            }
-                            className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                          </Badge>
+
+                        </div>
+
+
+                        {/* RATING */}
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
+
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+
+                          <span>
+
+                            {creator.rating || 0}
+
+                          </span>
+
+                          <span>
+
+                            (
+                            {creator.totalReviews || 0}
+                            )
+
+                          </span>
+
+                        </div>
+
+
+                        {/* LOCATION */}
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
+
+                          <MapPin className="w-4 h-4" />
+
+                          <span>
+
+                            {creator.location ||
+                              "Unknown"}
+
+                          </span>
+
+                        </div>
+
+
+                        {/* PRICE */}
+                        <div className="flex justify-between items-center">
+
+                          <span className="text-blue-600 text-lg">
+
+                            ₹
+                            {creator.price?.toLocaleString()}
+
+                          </span>
+
+
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
                           >
 
-                            <span className="text-gray-700">
+                            View Profile
 
-                              {subcategory}
+                          </Button>
 
-                            </span>
+                        </div>
 
-
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-
-                          </button>
-                        )
-                      )}
+                      </div>
 
                     </div>
 
                   </CardContent>
 
                 </Card>
-              );
-            })
+              )
+            )
           )}
 
         </div>

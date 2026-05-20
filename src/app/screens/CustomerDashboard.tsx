@@ -7,13 +7,11 @@ import { useNavigate } from "react-router-dom";
 
 import {
   Camera,
-  User,
-  Upload,
-  Settings,
-  LogOut,
+  Calendar,
   Clock,
   CheckCircle,
   XCircle,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -44,28 +42,26 @@ import {
   query,
   where,
   onSnapshot,
-  updateDoc,
   doc,
   getDoc,
 } from "firebase/firestore";
 
 
-export default function Dashboard() {
+export default function CustomerDashboard() {
 
   const navigate = useNavigate();
 
   const [bookings, setBookings] =
     useState<any[]>([]);
 
-  const [creatorProfile,
-    setCreatorProfile] =
+  const [userData, setUserData] =
     useState<any>(null);
 
   const [loading, setLoading] =
     useState(true);
 
 
-  // 🔥 AUTH CHECK
+  // 🔥 FETCH BOOKINGS
   useEffect(() => {
 
     const unsubscribeAuth =
@@ -73,7 +69,6 @@ export default function Dashboard() {
         auth,
         async (user) => {
 
-          // 🚫 NOT LOGGED IN
           if (!user) {
 
             navigate("/login");
@@ -83,7 +78,7 @@ export default function Dashboard() {
 
           try {
 
-            // 🔥 GET USER ROLE
+            // 🔥 GET USER
             const userDoc =
               await getDoc(
                 doc(
@@ -93,42 +88,20 @@ export default function Dashboard() {
                 )
               );
 
-            const userData =
+            const userInfo =
               userDoc.data();
 
-            // 🚫 CUSTOMER REDIRECT
+            setUserData(userInfo);
+
+            // 🚫 BLOCK CREATORS
             if (
-              userData?.role !==
+              userInfo?.role ===
               "creator"
             ) {
 
-              navigate(
-                "/customer-dashboard"
-              );
+              navigate("/dashboard");
 
               return;
-            }
-
-            // 🔥 GET CREATOR PROFILE
-            const creatorDoc =
-              await getDoc(
-                doc(
-                  db,
-                  "creators",
-                  user.uid
-                )
-              );
-
-            if (
-              creatorDoc.exists()
-            ) {
-
-              setCreatorProfile({
-                id:
-                  creatorDoc.id,
-                ...creatorDoc.data(),
-              });
-
             }
 
             // 🔥 BOOKINGS QUERY
@@ -138,7 +111,7 @@ export default function Dashboard() {
                 "bookings"
               ),
               where(
-                "creatorId",
+                "customerId",
                 "==",
                 user.uid
               )
@@ -172,8 +145,6 @@ export default function Dashboard() {
 
             console.log(error);
 
-            navigate("/login");
-
           }
         }
       );
@@ -182,34 +153,6 @@ export default function Dashboard() {
       unsubscribeAuth();
 
   }, [navigate]);
-
-
-  // 🔥 UPDATE BOOKING STATUS
-  const updateBookingStatus =
-    async (
-      bookingId: string,
-      status: string
-    ) => {
-
-      try {
-
-        await updateDoc(
-          doc(
-            db,
-            "bookings",
-            bookingId
-          ),
-          {
-            status,
-          }
-        );
-
-      } catch (error) {
-
-        console.log(error);
-
-      }
-    };
 
 
   // 🔥 STATUS COLOR
@@ -270,26 +213,6 @@ export default function Dashboard() {
   };
 
 
-  // 🔥 FILTER BOOKINGS
-  const pendingBookings =
-    bookings.filter(
-      (b) =>
-        b.status === "pending"
-    );
-
-  const acceptedBookings =
-    bookings.filter(
-      (b) =>
-        b.status === "accepted"
-    );
-
-  const completedBookings =
-    bookings.filter(
-      (b) =>
-        b.status === "completed"
-    );
-
-
   // 🔥 LOADING
   if (loading) {
 
@@ -298,7 +221,7 @@ export default function Dashboard() {
 
         <p className="text-gray-600">
 
-          Loading Dashboard...
+          Loading bookings...
 
         </p>
 
@@ -321,7 +244,7 @@ export default function Dashboard() {
 
             <h1 className="text-xl">
 
-              Creator Dashboard
+              Customer Dashboard
 
             </h1>
 
@@ -347,30 +270,20 @@ export default function Dashboard() {
         </div>
 
 
-        {/* PROFILE */}
-        <div className="flex items-center gap-4">
+        {/* USER */}
+        <div>
 
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl">
+          <h2 className="text-2xl mb-1">
 
-            {creatorProfile?.name?.charAt(0)}
+            {userData?.name}
 
-          </div>
+          </h2>
 
-          <div>
+          <p className="text-blue-100">
 
-            <h2 className="text-2xl mb-1">
+            Your bookings & services
 
-              {creatorProfile?.name}
-
-            </h2>
-
-            <p className="text-blue-100">
-
-              {creatorProfile?.category}
-
-            </p>
-
-          </div>
+          </p>
 
         </div>
 
@@ -378,7 +291,7 @@ export default function Dashboard() {
 
 
       {/* CONTENT */}
-      <div className="p-6 -mt-4 space-y-6">
+      <div className="p-6 -mt-4 space-y-4">
 
         {/* STATS */}
         <div className="grid grid-cols-3 gap-3">
@@ -389,7 +302,13 @@ export default function Dashboard() {
 
               <div className="text-2xl text-yellow-600 mb-1">
 
-                {pendingBookings.length}
+                {
+                  bookings.filter(
+                    (b) =>
+                      b.status ===
+                      "pending"
+                  ).length
+                }
 
               </div>
 
@@ -410,7 +329,13 @@ export default function Dashboard() {
 
               <div className="text-2xl text-green-600 mb-1">
 
-                {acceptedBookings.length}
+                {
+                  bookings.filter(
+                    (b) =>
+                      b.status ===
+                      "accepted"
+                  ).length
+                }
 
               </div>
 
@@ -431,7 +356,13 @@ export default function Dashboard() {
 
               <div className="text-2xl text-blue-600 mb-1">
 
-                {completedBookings.length}
+                {
+                  bookings.filter(
+                    (b) =>
+                      b.status ===
+                      "completed"
+                  ).length
+                }
 
               </div>
 
@@ -448,98 +379,16 @@ export default function Dashboard() {
         </div>
 
 
-        {/* QUICK ACTIONS */}
-        <Card className="border-gray-200">
-
-          <CardContent className="p-4">
-
-            <h3 className="text-sm text-gray-600 mb-3">
-
-              Quick Actions
-
-            </h3>
-
-            <div className="grid grid-cols-3 gap-2">
-
-              {/* EDIT PROFILE */}
-              <button
-                onClick={() =>
-                  navigate(
-                    "/creator-setup"
-                  )
-                }
-                className="flex flex-col items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-
-                <User className="w-5 h-5 text-blue-600" />
-
-                <span className="text-xs text-gray-700">
-
-                  Edit Profile
-
-                </span>
-
-              </button>
-
-
-              {/* PORTFOLIO */}
-              <button
-                onClick={() =>
-                  navigate(
-                    "/portfolio-upload"
-                  )
-                }
-                className="flex flex-col items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-
-                <Upload className="w-5 h-5 text-blue-600" />
-
-                <span className="text-xs text-gray-700">
-
-                  Add Portfolio
-
-                </span>
-
-              </button>
-
-
-              {/* SETTINGS */}
-              <button
-                className="flex flex-col items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-
-                <Settings className="w-5 h-5 text-blue-600" />
-
-                <span className="text-xs text-gray-700">
-
-                  Settings
-
-                </span>
-
-              </button>
-
-            </div>
-
-          </CardContent>
-
-        </Card>
-
-
         {/* BOOKINGS */}
         <div className="space-y-4">
-
-          <h2 className="text-xl text-gray-900">
-
-            Booking Requests
-
-          </h2>
-
 
           {bookings.length === 0 ? (
 
             <Card>
 
               <CardContent className="p-8 text-center">
+
+                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
 
                 <p className="text-gray-500">
 
@@ -562,13 +411,13 @@ export default function Dashboard() {
 
                 <CardContent className="p-4">
 
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
 
                     <div>
 
                       <h3 className="text-lg text-gray-900">
 
-                        {booking.customerName}
+                        {booking.creatorName}
 
                       </h3>
 
@@ -598,78 +447,48 @@ export default function Dashboard() {
                   </div>
 
 
-                  <div className="space-y-2 text-sm text-gray-700 mb-4">
+                  <div className="space-y-2 text-sm text-gray-700">
 
-                    <p>
+                    <div className="flex items-center gap-2">
 
-                      📅 {booking.date}
+                      <Calendar className="w-4 h-4 text-gray-400" />
 
-                    </p>
-
-                    <p>
-
-                      ⏰ {booking.time}
-
-                    </p>
-
-                    <p>
-
-                      💰 ₹
-                      {booking.amount?.toLocaleString()}
-
-                    </p>
-
-                    {booking.message && (
-
-                      <p>
-
-                        📝 {booking.message}
-
-                      </p>
-
-                    )}
-
-                  </div>
-
-
-                  {/* ACTIONS */}
-                  {booking.status ===
-                    "pending" && (
-
-                    <div className="flex gap-3">
-
-                      <Button
-                        onClick={() =>
-                          updateBookingStatus(
-                            booking.id,
-                            "accepted"
-                          )
-                        }
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-
-                        Accept
-
-                      </Button>
-
-
-                      <Button
-                        onClick={() =>
-                          updateBookingStatus(
-                            booking.id,
-                            "rejected"
-                          )
-                        }
-                        variant="destructive"
-                        className="flex-1"
-                      >
-
-                        Reject
-
-                      </Button>
+                      <span>
+                        {booking.date}
+                      </span>
 
                     </div>
-                  )}
+
+
+                    <div className="flex items-center gap-2">
+
+                      <Clock className="w-4 h-4 text-gray-400" />
+
+                      <span>
+                        {booking.time}
+                      </span>
+
+                    </div>
+
+
+                    <div className="pt-2 border-t border-gray-100 flex justify-between">
+
+                      <span className="text-gray-600">
+
+                        Amount
+
+                      </span>
+
+                      <span className="text-blue-600 text-lg">
+
+                        ₹
+                        {booking.amount?.toLocaleString()}
+
+                      </span>
+
+                    </div>
+
+                  </div>
 
                 </CardContent>
 

@@ -66,11 +66,15 @@ export default function Register() {
       });
 
       // 🔥 KEEP YOUR SAME NAVIGATION
-      if (role === "creator") {
-        navigate("/dashboard");
-      } else {
-        navigate("/categories");
-      }
+     if (role === "creator") {
+
+  navigate("/creator-setup");
+
+} else {
+
+  navigate("/categories");
+
+}
     } catch (error: any) {
       alert(error.message);
     }
