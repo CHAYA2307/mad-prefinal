@@ -343,20 +343,29 @@ export default function CreatorList() {
 
                 <div className="flex gap-4 items-start">
 
-                  {/* PROFILE IMAGE */}
-                  {creator.profileImage && (
+{/* PROFILE IMAGE */}
+<div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
 
-                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+  <img
+    src={
+      creator.profileImage?.trim()
+        ? creator.profileImage
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            creator.name || "Creator"
+          )}&background=2563eb&color=fff&size=200`
+    }
+    alt={creator.name}
+    className="w-full h-full object-cover"
 
-                      <img
-                        src={creator.profileImage}
-                        alt={creator.name}
-                        className="w-full h-full object-cover"
-                      />
+    onError={(e) => {
+      e.currentTarget.src =
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          creator.name || "Creator"
+        )}&background=2563eb&color=fff&size=200`;
+    }}
+  />
 
-                    </div>
-
-                  )}
+</div>
 
 
                   {/* DETAILS */}
@@ -367,6 +376,13 @@ export default function CreatorList() {
                       {creator.name}
 
                     </h3>
+
+
+                    <p className="text-sm text-gray-600 mb-2">
+
+                      {creator.subCategory}
+
+                    </p>
 
 
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">

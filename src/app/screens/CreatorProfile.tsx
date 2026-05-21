@@ -37,7 +37,6 @@ import {
 } from "firebase/firestore";
 
 
-
 export default function CreatorProfile() {
 
   const navigate = useNavigate();
@@ -162,28 +161,29 @@ export default function CreatorProfile() {
 
         <div className="flex items-start gap-4">
 
-          {/* PROFILE IMAGE */}
-          <div className="w-24 h-24 rounded-lg overflow-hidden bg-white/20 shrink-0">
+      {/* PROFILE IMAGE */}
+<div className="w-24 h-24 rounded-lg overflow-hidden bg-white/20 shrink-0">
 
-            {creator.image ? (
+  <img
+    src={
+      creator.profileImage?.trim()
+        ? creator.profileImage
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            creator.name || "Creator"
+          )}&background=2563eb&color=fff&size=200`
+    }
+    alt={creator.name}
+    className="w-full h-full object-cover"
 
-              <img
-                src={creator.image}
-                alt={creator.name}
-                className="w-full h-full object-cover"
-              />
+    onError={(e) => {
+      e.currentTarget.src =
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          creator.name || "Creator"
+        )}&background=2563eb&color=fff&size=200`;
+    }}
+  />
 
-            ) : (
-
-              <div className="w-full h-full flex items-center justify-center text-3xl text-white">
-
-                {creator.name?.charAt(0)}
-
-              </div>
-
-            )}
-
-          </div>
+</div>
 
 
           <div className="flex-1">
@@ -464,7 +464,7 @@ export default function CreatorProfile() {
               className="mt-4"
             >
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
 
                 {(creator.portfolioVideos || []).map(
                   (
@@ -472,18 +472,16 @@ export default function CreatorProfile() {
                     idx: number
                   ) => (
 
-                    <div
+                    <a
                       key={idx}
-                      className="aspect-square rounded-lg overflow-hidden bg-gray-100"
+                      href={url}
+                      target="_blank"
+                      className="block p-4 border rounded-lg hover:bg-gray-50"
                     >
 
-                      <img
-                        src={url}
-                        alt={`Video ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      {url}
 
-                    </div>
+                    </a>
                   )
                 )}
 
@@ -503,22 +501,22 @@ export default function CreatorProfile() {
 
         <div className="flex gap-3 max-w-2xl mx-auto">
 
-      {/* CHAT */}
-<Button
-  variant="outline"
-  className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
-  onClick={() =>
-    navigate(
-      `/chat/${creator.id}`
-    )
-  }
->
+          {/* CHAT */}
+          <Button
+            variant="outline"
+            className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+            onClick={() =>
+              navigate(
+                `/chat/${creator.id}`
+              )
+            }
+          >
 
-  <MessageCircle className="w-4 h-4 mr-2" />
+            <MessageCircle className="w-4 h-4 mr-2" />
 
-  Chat
+            Chat
 
-</Button>
+          </Button>
 
 
           {/* BOOK */}

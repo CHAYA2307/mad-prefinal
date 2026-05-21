@@ -9,6 +9,7 @@ import {
   FileText,
   User,
   MapPin,
+  Image,
 } from "lucide-react";
 
 import { auth, db } from "../../firebase";
@@ -55,6 +56,10 @@ export default function CreatorSetup() {
     useState("");
 
   const [about, setAbout] =
+    useState("");
+
+  const [profileImage,
+    setProfileImage] =
     useState("");
 
   const [loading, setLoading] =
@@ -105,12 +110,15 @@ export default function CreatorSetup() {
 
           about,
 
+          profileImage,
+
           rating: 4.8,
 
           totalReviews: 120,
 
-          image:
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+          portfolioImages: [],
+
+          portfolioVideos: [],
 
           createdAt:
             new Date(),
@@ -318,6 +326,34 @@ export default function CreatorSetup() {
                   value={location}
                   onChange={(e) =>
                     setLocation(
+                      e.target.value
+                    )
+                  }
+                  className="pl-10"
+                  required
+                />
+
+              </div>
+
+            </div>
+
+
+            {/* PROFILE IMAGE URL */}
+            <div className="space-y-2">
+
+              <Label>
+                Profile Image URL
+              </Label>
+
+              <div className="relative">
+
+                <Image className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+
+                <Input
+                  placeholder="https://example.com/image.jpg"
+                  value={profileImage}
+                  onChange={(e) =>
+                    setProfileImage(
                       e.target.value
                     )
                   }
