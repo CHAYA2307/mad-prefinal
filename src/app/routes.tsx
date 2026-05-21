@@ -21,7 +21,7 @@ import CreatorSetup from "./screens/CreatorSetup";
 import PortfolioUpload from "./screens/PortfolioUpload";
 
 import CustomerDashboard from "./screens/CustomerDashboard";
-
+import Chat from "./screens/Chat";
 
 export const router =
   createBrowserRouter([
@@ -88,5 +88,9 @@ export const router =
       element:
         <PortfolioUpload />,
     },
+    {
+  path: "/chat/:creatorId",
+  element: <Chat />,
+},
 
   ]);

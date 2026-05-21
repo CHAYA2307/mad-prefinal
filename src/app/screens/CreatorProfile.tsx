@@ -37,6 +37,7 @@ import {
 } from "firebase/firestore";
 
 
+
 export default function CreatorProfile() {
 
   const navigate = useNavigate();
@@ -502,22 +503,22 @@ export default function CreatorProfile() {
 
         <div className="flex gap-3 max-w-2xl mx-auto">
 
-          {/* CHAT */}
-          <Button
-            variant="outline"
-            className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
-            onClick={() =>
-              alert(
-                "Chat feature coming soon!"
-              )
-            }
-          >
+      {/* CHAT */}
+<Button
+  variant="outline"
+  className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+  onClick={() =>
+    navigate(
+      `/chat/${creator.id}`
+    )
+  }
+>
 
-            <MessageCircle className="w-4 h-4 mr-2" />
+  <MessageCircle className="w-4 h-4 mr-2" />
 
-            Chat
+  Chat
 
-          </Button>
+</Button>
 
 
           {/* BOOK */}
