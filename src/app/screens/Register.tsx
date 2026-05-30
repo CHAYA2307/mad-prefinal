@@ -33,10 +33,12 @@ import {
 import {
   auth,
   db,
+  googleProvider,
 } from "../../firebase";
 
 import {
   createUserWithEmailAndPassword,
+  signInWithPopup,
 } from "firebase/auth";
 
 import {
@@ -154,6 +156,66 @@ export default function Register() {
 
       setLoading(false);
     };
+    const handleGoogleRegister =
+  async () => {
+
+    try {
+
+      const result =
+        await signInWithPopup(
+          auth,
+          googleProvider
+        );
+
+      const user =
+        result.user;
+
+      await setDoc(
+        doc(
+          db,
+          "users",
+          user.uid
+        ),
+        {
+          uid: user.uid,
+
+          name:
+            user.displayName || "",
+
+          email:
+            user.email || "",
+
+          role,
+
+          profileImage:
+            user.photoURL || "",
+
+          createdAt:
+            new Date(),
+        },
+        { merge: true }
+      );
+
+      if (role === "creator") {
+
+        navigate(
+          "/creator-setup"
+        );
+
+      } else {
+
+        navigate(
+          "/categories"
+        );
+
+      }
+
+    } catch (error: any) {
+
+      alert(error.message);
+
+    }
+  };
 
 
   return (
@@ -387,17 +449,55 @@ export default function Register() {
 
 
               {/* BUTTON */}
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={loading}
-              >
+              {/* REGISTER */}
+<Button
+  type="submit"
+  className="w-full bg-blue-600 hover:bg-blue-700"
+  disabled={loading}
+>
 
-                {loading
-                  ? "Creating Account..."
-                  : "Register"}
+  {loading
+    ? "Creating Account..."
+    : "Register"}
 
-              </Button>
+</Button>
+<div className="relative my-4">
+
+  <div className="absolute inset-0 flex items-center">
+
+    <div className="w-full border-t border-gray-200" />
+
+  </div>
+
+  <div className="relative flex justify-center text-sm">
+
+    <span className="bg-white px-4 text-gray-500">
+      OR
+    </span>
+
+  </div>
+
+</div>
+
+          {/* GOOGLE REGISTER */}
+<Button
+  type="button"
+  onClick={handleGoogleRegister}
+  className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl flex items-center justify-center gap-3"
+>
+
+  <img
+    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+    alt="Google"
+    className="w-5 h-5 bg-white rounded-full p-0.5"
+  />
+
+  <span className="font-medium">
+    Continue with Google
+  </span>
+
+</Button>
+
 
 
               {/* LOGIN */}

@@ -27,10 +27,12 @@ import {
 import {
   auth,
   db,
+  googleProvider,
 } from "../../firebase";
 
 import {
   signInWithEmailAndPassword,
+  signInWithPopup,
 } from "firebase/auth";
 
 import {
@@ -130,7 +132,56 @@ export default function Login() {
 
     setLoading(false);
   };
+// 🔥 GOOGLE LOGIN
+const handleGoogleLogin =
+  async () => {
 
+    try {
+
+      const result =
+        await signInWithPopup(
+          auth,
+          googleProvider
+        );
+
+      const user =
+        result.user;
+
+      const userDoc =
+        await getDoc(
+          doc(
+            db,
+            "users",
+            user.uid
+          )
+        );
+
+      const userData =
+        userDoc.data();
+
+      if (
+        userData?.role ===
+        "creator"
+      ) {
+
+        navigate(
+          "/dashboard"
+        );
+
+      } else {
+
+        navigate(
+          "/categories"
+        );
+
+      }
+
+    } catch (error: any) {
+
+      alert(error.message);
+
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col p-6">
@@ -280,6 +331,45 @@ export default function Login() {
                 </div>
 
               </div>
+
+
+
+              {/*google button*/}
+              <Button
+  type="button"
+  onClick={handleGoogleLogin}
+  className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl flex items-center justify-center gap-3"
+>
+
+  <img
+    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+    alt="Google"
+    className="w-5 h-5 bg-white rounded-full p-0.5"
+  />
+
+  <span className="font-medium">
+    Continue with Google
+  </span>
+
+</Button>
+
+<div className="relative my-4">
+
+  <div className="absolute inset-0 flex items-center">
+
+    <div className="w-full border-t border-gray-200" />
+
+  </div>
+
+  <div className="relative flex justify-center text-sm">
+
+    <span className="bg-white px-4 text-gray-500">
+      OR
+    </span>
+
+  </div>
+
+</div>
 
 
               {/* BUTTON */}
