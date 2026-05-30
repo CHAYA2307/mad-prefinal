@@ -29,7 +29,7 @@ import {
 
 
 // 🔥 FIREBASE
-import { db } from "../../firebase";
+import { auth, db } from "../../firebase";
 
 import {
   doc,
@@ -48,8 +48,8 @@ export default function CreatorProfile() {
 
   const [loading, setLoading] =
     useState(true);
-
-
+  const isOwner =
+    auth.currentUser?.uid === id;
   // 🔥 FETCH CREATOR
   useEffect(() => {
 
@@ -518,20 +518,52 @@ export default function CreatorProfile() {
 
           </Button>
 
+{/* FIXED BOTTOM */}
+<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
 
-          {/* BOOK */}
-          <Button
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
-            onClick={() =>
-              navigate(
-                `/booking/${creator.id}`
-              )
-            }
-          >
+  <div className="flex gap-3 max-w-2xl mx-auto">
 
-            Book Now
+    {isOwner ? (
 
-          </Button>
+  <Button
+    className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+    onClick={() =>
+      navigate("/creator-setup")
+    }
+  >
+    Edit Profile
+  </Button>
+
+) : (
+
+      <>
+        <Button
+          variant="outline"
+          className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+          onClick={() =>
+            navigate(`/chat/${creator.id}`)
+          }
+        >
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Chat
+        </Button>
+
+        <Button
+          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          onClick={() =>
+            navigate(`/booking/${creator.id}`)
+          }
+        >
+          Book Now
+        </Button>
+      </>
+
+    )}
+
+  </div>
+
+</div>
+          
 
         </div>
 

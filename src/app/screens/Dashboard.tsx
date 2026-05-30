@@ -14,6 +14,7 @@ import {
   IndianRupee,
   LogOut,
   Trash2,
+  MessageCircle,
 } from "lucide-react";
 
 import {
@@ -416,7 +417,7 @@ export default function Dashboard() {
 
             </h2>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
 
               {/* PORTFOLIO */}
               <button
@@ -458,6 +459,24 @@ export default function Dashboard() {
                 </span>
 
               </button>
+
+              {/* MESSAGES */}
+<button
+  onClick={() =>
+    navigate(
+      `/chat/${creator.id}`
+    )
+  }
+  className="flex flex-col items-center gap-2 p-4 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+>
+
+  <MessageCircle className="w-6 h-6 text-green-600" />
+
+  <span>
+    Messages
+  </span>
+
+</button>
 
             </div>
 

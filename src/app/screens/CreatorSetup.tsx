@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +17,7 @@ import { auth, db } from "../../firebase";
 import {
   doc,
   setDoc,
+  getDoc,
 } from "firebase/firestore";
 
 import {
@@ -64,7 +65,60 @@ export default function CreatorSetup() {
 
   const [loading, setLoading] =
     useState(false);
+  const [isEditMode, setIsEditMode] =
+  useState(false);
 
+
+  useEffect(() => {
+
+  const loadProfile = async () => {
+
+    const user = auth.currentUser;
+
+    if (!user) return;
+
+    const docRef =
+      doc(db, "creators", user.uid);
+
+    const docSnap =
+      await getDoc(docRef);
+
+    if (docSnap.exists()) {
+
+      const data = docSnap.data();
+
+      setName(data.name || "");
+      setCategory(data.category || "");
+      setSubCategory(
+        data.subCategory || ""
+      );
+      setExperience(
+        String(
+          data.experience || ""
+        )
+      );
+      setPrice(
+        String(
+          data.price || ""
+        )
+      );
+      setLocation(
+        data.location || ""
+      );
+      setAbout(
+        data.about || ""
+      );
+      setProfileImage(
+        data.profileImage || ""
+      );
+
+      setIsEditMode(true);
+    }
+  };
+
+  loadProfile();
+
+}, []);
 
   // 🔥 SUBMIT
   const handleSubmit = async (
@@ -125,9 +179,11 @@ export default function CreatorSetup() {
         }
       );
 
-      alert(
-        "Creator Profile Created!"
-      );
+     alert(
+  isEditMode
+    ? "Profile Updated!"
+    : "Creator Profile Created!"
+);
 
       navigate("/dashboard");
 
@@ -403,8 +459,10 @@ export default function CreatorSetup() {
             >
 
               {loading
-                ? "Saving..."
-                : "Create Profile"}
+  ? "Saving..."
+  : isEditMode
+  ? "Update Profile"
+  : "Create Profile"}
 
             </Button>
 
